@@ -80,7 +80,7 @@ tg me
 | `--silent`     | `-s` | 静默发送                              |
 | `--protect`    | `-p` | 防转发/保存                           |
 | `--button`     | `-b` | Inline 按钮，可多次使用               |
-| `--parse-mode` | —    | HTML（默认）\| Markdown \| MarkdownV2 |
+| `--parse-mode` | —    | 默认不传（纯文本）；可选 HTML \| Markdown \| MarkdownV2 |
 | `--thread`     | —    | 话题群 message_thread_id              |
 | `--json`       | `-j` | 输出完整 JSON                         |
 

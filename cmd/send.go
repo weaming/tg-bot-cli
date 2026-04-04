@@ -36,7 +36,7 @@ func init() {
 	f := sendCmd.Flags()
 	f.StringVarP(&sendTo, "to", "t", "", "目标 chat_id 或 username")
 	f.StringVarP(&sendText, "text", "m", "", "消息文本，使用 \"-\" 从 stdin 读取")
-	f.StringVar(&sendParseMode, "parse-mode", "HTML", "解析模式：HTML | Markdown | MarkdownV2")
+	f.StringVar(&sendParseMode, "parse-mode", "", "解析模式：HTML | Markdown | MarkdownV2")
 	f.StringVarP(&sendFile, "file", "f", "", "要发送的文件路径")
 	f.StringVarP(&sendCaption, "caption", "c", "", "文件说明文字")
 	f.IntVarP(&sendReplyTo, "reply-to", "r", 0, "回复的消息 ID")
