@@ -79,6 +79,10 @@ func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) erro
 		return fmt.Errorf("--text 不能为空")
 	}
 
+	if sendParseMode == "MarkdownV2" {
+		text = util.EscapeMarkdownV2(text)
+	}
+
 	msg, err := client.SendMessage(api.SendMessageParams{
 		ChatID:                sendTo,
 		Text:                  text,
@@ -106,6 +110,10 @@ func sendMedia(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) error 
 	caption, err := util.ReadTextOrStdin(sendCaption)
 	if err != nil {
 		return fmt.Errorf("读取说明文字失败: %w", err)
+	}
+
+	if sendParseMode == "MarkdownV2" {
+		caption = util.EscapeMarkdownV2(caption)
 	}
 
 	msg, err := client.SendMedia(api.SendMediaParams{
