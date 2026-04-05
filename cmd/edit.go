@@ -14,12 +14,12 @@ var editCmd = &cobra.Command{
 }
 
 var (
-	editChat           string
-	editMsgID          int
-	editText           string
-	editParseMode      string
-	editDisablePreview bool
-	editButtons        []string
+	editChat        string
+	editMsgID       int
+	editText        string
+	editParseMode   string
+	editLinkPreview bool
+	editButtons     []string
 )
 
 func init() {
@@ -30,7 +30,7 @@ func init() {
 	f.IntVarP(&editMsgID, "msg", "m", 0, "要编辑的消息 ID（必填）")
 	f.StringVarP(&editText, "text", "t", "", "新文本，使用 \"-\" 从 stdin 读取（必填）")
 	f.StringVar(&editParseMode, "parse-mode", "", "解析模式：HTML | Markdown | MarkdownV2")
-	f.BoolVarP(&editDisablePreview, "disable-preview", "d", false, "禁用链接预览")
+	f.BoolVarP(&editLinkPreview, "link-preview", "l", false, "启用链接预览")
 	f.StringArrayVarP(&editButtons, "button", "b", nil, "Inline 按钮行，格式同 send")
 
 	editCmd.MarkFlagRequired("msg")
@@ -63,7 +63,7 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		MessageID:             editMsgID,
 		Text:                  text,
 		ParseMode:             editParseMode,
-		DisableWebPagePreview: editDisablePreview,
+		DisableWebPagePreview: !editLinkPreview,
 		ReplyMarkup:           replyMarkup,
 	})
 	if err != nil {

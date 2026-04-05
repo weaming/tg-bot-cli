@@ -17,17 +17,17 @@ var sendCmd = &cobra.Command{
 }
 
 var (
-	sendTo             string
-	sendText           string
-	sendParseMode      string
-	sendFile           string
-	sendCaption        string
-	sendReplyTo        int
-	sendDisablePreview bool
-	sendSilent         bool
-	sendProtect        bool
-	sendThread         int
-	sendButtons        []string
+	sendTo          string
+	sendText        string
+	sendParseMode   string
+	sendFile        string
+	sendCaption     string
+	sendReplyTo     int
+	sendLinkPreview bool
+	sendSilent      bool
+	sendProtect     bool
+	sendThread      int
+	sendButtons     []string
 )
 
 func init() {
@@ -40,7 +40,7 @@ func init() {
 	f.StringVarP(&sendFile, "file", "f", "", "要发送的文件路径")
 	f.StringVarP(&sendCaption, "caption", "c", "", "文件说明文字")
 	f.IntVarP(&sendReplyTo, "reply-to", "r", 0, "回复的消息 ID")
-	f.BoolVarP(&sendDisablePreview, "disable-preview", "d", false, "禁用链接预览")
+	f.BoolVarP(&sendLinkPreview, "link-preview", "l", false, "启用链接预览")
 	f.BoolVarP(&sendSilent, "silent", "s", false, "静默发送（不通知）")
 	f.BoolVarP(&sendProtect, "protect", "p", false, "防止转发和保存")
 	f.IntVar(&sendThread, "thread", 0, "话题 ID（message_thread_id）")
@@ -89,7 +89,7 @@ func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) erro
 		ParseMode:             sendParseMode,
 		MessageThreadID:       sendThread,
 		ReplyToMessageID:      sendReplyTo,
-		DisableWebPagePreview: sendDisablePreview,
+		DisableWebPagePreview: !sendLinkPreview,
 		DisableNotification:   sendSilent,
 		ProtectContent:        sendProtect,
 		ReplyMarkup:           replyMarkup,
