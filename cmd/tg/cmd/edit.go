@@ -15,6 +15,7 @@ var (
 	editChat        string
 	editMsgID       int
 	editText        string
+	editInputFile   string
 	editParseMode   string
 	editLinkPreview bool
 	editButtons     []string
@@ -26,7 +27,8 @@ func init() {
 	f := editCmd.Flags()
 	f.StringVarP(&editChat, "chat", "c", "", "chat_id 或 username")
 	f.IntVarP(&editMsgID, "msg", "m", 0, "要编辑的消息 ID（必填）")
-	f.StringVarP(&editText, "text", "t", "", "新文本，使用 \"-\" 从 stdin 读取（必填）")
+	f.StringVarP(&editText, "text", "t", "", "新文本（必填）")
+	f.StringVarP(&editInputFile, "input-file", "i", "", "从文件读取新文本")
 	f.StringVar(&editParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.BoolVarP(&editLinkPreview, "link-preview", "l", false, "启用链接预览")
 	f.StringArrayVarP(&editButtons, "button", "b", nil, "Inline 按钮行，格式同 send")
@@ -46,9 +48,12 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	text, err := api.ReadTextOrStdin(editText)
+	text, err := api.ReadFromInput(editInputFile)
 	if err != nil {
 		return err
+	}
+	if editText != "" {
+		text = editText
 	}
 
 	replyMarkup, err := api.ParseButtons(editButtons)

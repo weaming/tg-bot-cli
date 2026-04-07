@@ -12,16 +12,17 @@ var copyCmd = &cobra.Command{
 }
 
 var (
-	copyFrom      string
-	copyTo        string
-	copyMsgID     int
-	copyCaption   string
-	copyParseMode string
-	copyThread    int
-	copyReplyTo   int
-	copySilent    bool
-	copyProtect   bool
-	copyButtons   []string
+	copyFrom        string
+	copyTo          string
+	copyMsgID       int
+	copyCaption     string
+	copyCaptionFile string
+	copyParseMode   string
+	copyThread      int
+	copyReplyTo     int
+	copySilent      bool
+	copyProtect     bool
+	copyButtons     []string
 )
 
 func init() {
@@ -31,7 +32,8 @@ func init() {
 	f.StringVarP(&copyFrom, "from", "f", "", "来源 chat_id（必填）")
 	f.StringVarP(&copyTo, "to", "t", "", "目标 chat_id 或 username")
 	f.IntVarP(&copyMsgID, "msg", "m", 0, "消息 ID（必填）")
-	f.StringVarP(&copyCaption, "caption", "c", "", "覆盖原始说明文字，使用 \"-\" 从 stdin 读取")
+	f.StringVarP(&copyCaption, "caption", "c", "", "覆盖原始说明文字")
+	f.StringVar(&copyCaptionFile, "caption-file", "", "从文件读取说明文字")
 	f.StringVar(&copyParseMode, "parse-mode", "", "解析模式")
 	f.IntVar(&copyThread, "thread", 0, "目标话题 ID")
 	f.IntVarP(&copyReplyTo, "reply-to", "r", 0, "回复的消息 ID")
@@ -54,9 +56,12 @@ func runCopy(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	caption, err := api.ReadTextOrStdin(copyCaption)
+	caption, err := api.ReadFromInput(copyCaptionFile)
 	if err != nil {
 		return err
+	}
+	if copyCaption != "" {
+		caption = copyCaption
 	}
 
 	replyMarkup, err := api.ParseButtons(copyButtons)

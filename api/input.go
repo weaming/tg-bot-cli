@@ -23,13 +23,27 @@ func EscapeMarkdownV2(text string) string {
 
 // ReadTextOrStdin 当 text 为 "-" 时从 stdin 读取，否则直接返回
 func ReadTextOrStdin(text string) (string, error) {
-	if text != "-" {
+	if text != "" && text != "-" {
 		return text, nil
 	}
+	return ReadFromInput(text)
+}
 
-	data, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		return "", err
+// ReadFromInput 从 stdin 或文件读取内容
+func ReadFromInput(text string) (string, error) {
+	if text == "-" {
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return "", err
+		}
+		return string(data), nil
 	}
-	return string(data), nil
+	if text != "" {
+		data, err := os.ReadFile(text)
+		if err != nil {
+			return "", err
+		}
+		return string(data), nil
+	}
+	return "", nil
 }

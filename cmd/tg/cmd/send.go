@@ -17,6 +17,7 @@ var sendCmd = &cobra.Command{
 var (
 	sendTo          string
 	sendText        string
+	sendInputFile   string
 	sendParseMode   string
 	sendFile        string
 	sendCaption     string
@@ -33,7 +34,8 @@ func init() {
 
 	f := sendCmd.Flags()
 	f.StringVarP(&sendTo, "to", "t", "", "目标 chat_id 或 username")
-	f.StringVarP(&sendText, "text", "m", "", "消息文本，使用 \"-\" 从 stdin 读取")
+	f.StringVarP(&sendText, "text", "m", "", "消息文本")
+	f.StringVarP(&sendInputFile, "input-file", "i", "", "从文件读取消息文本")
 	f.StringVar(&sendParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.StringVarP(&sendFile, "file", "f", "", "要发送的文件路径")
 	f.StringVarP(&sendCaption, "caption", "c", "", "文件说明文字")
@@ -69,9 +71,15 @@ func runSend(cmd *cobra.Command, args []string) error {
 }
 
 func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) error {
-	text, err := api.ReadTextOrStdin(sendText)
+	text, err := api.ReadFromInput(sendInputFile)
 	if err != nil {
-		return fmt.Errorf("读取文本失败: %w", err)
+		return fmt.Errorf("读取文件失败: %w", err)
+	}
+	if sendText != "" {
+		text = sendText
+	}
+	if text == "" {
+		return fmt.Errorf("--text 不能为空")
 	}
 	if text == "" {
 		return fmt.Errorf("--text 不能为空")
