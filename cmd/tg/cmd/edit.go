@@ -27,7 +27,7 @@ func init() {
 	f.StringVarP(&editChat, "chat", "c", "", "chat_id 或 username")
 	f.IntVarP(&editMsgID, "msg", "m", 0, "要编辑的消息 ID（必填）")
 	f.StringVarP(&editText, "text", "t", "", "新文本，使用 \"-\" 从 stdin 读取（必填）")
-	f.StringVar(&editParseMode, "parse-mode", "", "解析模式：HTML | Markdown | MarkdownV2")
+	f.StringVar(&editParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.BoolVarP(&editLinkPreview, "link-preview", "l", false, "启用链接预览")
 	f.StringArrayVarP(&editButtons, "button", "b", nil, "Inline 按钮行，格式同 send")
 

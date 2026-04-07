@@ -46,22 +46,22 @@ tg me
 
 ## 常用选项
 
-| 选项           | 简写 | 说明                                                    |
-| -------------- | ---- | ------------------------------------------------------- |
-| `--to`         | `-t` | 目标 chat，username 可省略 `@`                          |
-| `--chat`       | `-c` | 目标 chat（edit/delete/pin/info）                       |
-| `--text`       | `-m` | 消息文本，`-` 读 stdin                                  |
-| `--file`       | `-f` | 文件路径（自动识别类型）                                |
-| `--caption`    | `-c` | 文件说明                                                |
-| `--msg`        | `-m` | 消息 ID                                                 |
-| `--from`       | `-f` | 来源 chat（forward/copy）                               |
-| `--reply-to`   | `-r` | 回复的消息 ID                                           |
-| `--silent`     | `-s` | 静默发送                                                |
-| `--protect`    | `-p` | 防止转发/保存                                           |
-| `--thread`     | —    | 话题群 message_thread_id                                |
-| `--button`     | `-b` | Inline 按钮（多次使用 = 多行，`,` 同行，`\|` 换行）     |
-| `--parse-mode` | —    | 默认不传（纯文本）；可选 HTML \| Markdown \| MarkdownV2 |
-| `--json`       | `-j` | 输出完整 JSON 响应                                      |
+| 选项           | 简写 | 说明                                                |
+| -------------- | ---- | --------------------------------------------------- |
+| `--to`         | `-t` | 目标 chat，username 可省略 `@`                      |
+| `--chat`       | `-c` | 目标 chat（edit/delete/pin/info）                   |
+| `--text`       | `-m` | 消息文本，`-` 读 stdin                              |
+| `--file`       | `-f` | 文件路径（自动识别类型）                            |
+| `--caption`    | `-c` | 文件说明                                            |
+| `--msg`        | `-m` | 消息 ID                                             |
+| `--from`       | `-f` | 来源 chat（forward/copy）                           |
+| `--reply-to`   | `-r` | 回复的消息 ID                                       |
+| `--silent`     | `-s` | 静默发送                                            |
+| `--protect`    | `-p` | 防止转发/保存                                       |
+| `--thread`     | —    | 话题群 message_thread_id                            |
+| `--button`     | `-b` | Inline 按钮（多次使用 = 多行，`,` 同行，`\|` 换行） |
+| `--parse-mode` | —    | 默认不传（纯文本）；可选 HTML \| MarkdownV2         |
+| `--json`       | `-j` | 输出完整 JSON 响应                                  |
 
 ## 示例
 

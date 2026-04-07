@@ -67,22 +67,22 @@ tg me
 
 ## 常用 flag
 
-| flag           | 简写 | 说明                                  |
-| -------------- | ---- | ------------------------------------- |
-| `--to`         | `-t` | 目标 chat（send/forward/copy）        |
-| `--chat`       | `-c` | 目标 chat（edit/delete/pin/info）     |
-| `--text`       | `-m` | 消息文本，`-` 读 stdin                |
-| `--file`       | `-f` | 文件路径                              |
-| `--caption`    | `-c` | 文件说明（send/copy）                 |
-| `--msg`        | `-m` | 消息 ID                               |
-| `--from`       | `-f` | 来源 chat（forward/copy）             |
-| `--reply-to`   | `-r` | 回复的消息 ID                         |
-| `--silent`     | `-s` | 静默发送                              |
-| `--protect`    | `-p` | 防转发/保存                           |
-| `--button`     | `-b` | Inline 按钮，可多次使用               |
-| `--parse-mode` | —    | 默认不传（纯文本）；可选 HTML \| Markdown \| MarkdownV2 |
-| `--thread`     | —    | 话题群 message_thread_id              |
-| `--json`       | `-j` | 输出完整 JSON                         |
+| flag           | 简写 | 说明                                        |
+| -------------- | ---- | ------------------------------------------- |
+| `--to`         | `-t` | 目标 chat（send/forward/copy）              |
+| `--chat`       | `-c` | 目标 chat（edit/delete/pin/info）           |
+| `--text`       | `-m` | 消息文本，`-` 读 stdin                      |
+| `--file`       | `-f` | 文件路径                                    |
+| `--caption`    | `-c` | 文件说明（send/copy）                       |
+| `--msg`        | `-m` | 消息 ID                                     |
+| `--from`       | `-f` | 来源 chat（forward/copy）                   |
+| `--reply-to`   | `-r` | 回复的消息 ID                               |
+| `--silent`     | `-s` | 静默发送                                    |
+| `--protect`    | `-p` | 防转发/保存                                 |
+| `--button`     | `-b` | Inline 按钮，可多次使用                     |
+| `--parse-mode` | —    | 默认不传（纯文本）；可选 HTML \| MarkdownV2 |
+| `--thread`     | —    | 话题群 message_thread_id                    |
+| `--json`       | `-j` | 输出完整 JSON                               |
 
 ## 文件类型自动识别
 
