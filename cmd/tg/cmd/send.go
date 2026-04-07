@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"tg/internal/api"
-	"tg/internal/util"
-
 	"github.com/spf13/cobra"
+	"github.com/weaming/tg-bot-cli/api"
 )
 
 var sendCmd = &cobra.Command{
@@ -59,7 +57,7 @@ func runSend(cmd *cobra.Command, args []string) error {
 	}
 	sendTo = target
 
-	replyMarkup, err := util.ParseButtons(sendButtons)
+	replyMarkup, err := api.ParseButtons(sendButtons)
 	if err != nil {
 		return err
 	}
@@ -71,7 +69,7 @@ func runSend(cmd *cobra.Command, args []string) error {
 }
 
 func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) error {
-	text, err := util.ReadTextOrStdin(sendText)
+	text, err := api.ReadTextOrStdin(sendText)
 	if err != nil {
 		return fmt.Errorf("读取文本失败: %w", err)
 	}
@@ -80,7 +78,7 @@ func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) erro
 	}
 
 	if sendParseMode == "MarkdownV2" {
-		text = util.EscapeMarkdownV2(text)
+		text = api.EscapeMarkdownV2(text)
 	}
 
 	msg, err := client.SendMessage(api.SendMessageParams{
@@ -107,13 +105,13 @@ func sendMedia(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) error 
 		return fmt.Errorf("文件不存在: %s", sendFile)
 	}
 
-	caption, err := util.ReadTextOrStdin(sendCaption)
+	caption, err := api.ReadTextOrStdin(sendCaption)
 	if err != nil {
 		return fmt.Errorf("读取说明文字失败: %w", err)
 	}
 
 	if sendParseMode == "MarkdownV2" {
-		caption = util.EscapeMarkdownV2(caption)
+		caption = api.EscapeMarkdownV2(caption)
 	}
 
 	msg, err := client.SendMedia(api.SendMediaParams{

@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"tg/internal/api"
-
 	"github.com/spf13/cobra"
+	"github.com/weaming/tg-bot-cli/api"
 )
 
 var forwardCmd = &cobra.Command{

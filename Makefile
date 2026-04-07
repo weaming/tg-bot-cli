@@ -1,4 +1,5 @@
 BINARY  ?= tg
+BINARY_PARSER  ?= md2tg
 TOKEN   ?=
 TARGET  ?=
 
@@ -19,26 +20,31 @@ PLATFORMS = \
 	darwin/arm64 \
 	windows/amd64
 
-.PHONY: build install dist clean
+.PHONY: build install-tg dist-tg clean
 
 build:
-	$(GO_BUILD) -o $(BINARY) .
+	$(GO_BUILD) -o $(BINARY) ./cmd/tg/
 
-install:
+install-tg:
 	@if [ -z "$(TOKEN)" ]; then echo "用法: make install TOKEN=<bot_token> [TARGET=<chat_id>] [BINARY=tg]"; exit 1; fi
-	$(GO_BUILD) -o $(BINARY) .
+	$(GO_BUILD) -o $(BINARY) ./cmd/tg/
 	mv $(BINARY) $(GOPATH)/bin/$(BINARY)
 	@echo "已安装: $(GOPATH)/bin/$(BINARY)"
 
-dist:
+dist-tg:
 	@mkdir -p dist
 	@$(foreach PLATFORM,$(PLATFORMS), \
 		$(eval OS   := $(word 1,$(subst /, ,$(PLATFORM)))) \
 		$(eval ARCH := $(word 2,$(subst /, ,$(PLATFORM)))) \
 		$(eval EXT  := $(if $(filter windows,$(OS)),.exe,)) \
 		$(eval OUT  := dist/$(BINARY)-$(OS)-$(ARCH)$(EXT)) \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO_BUILD) -o $(OUT) . && echo "  $(OUT)" ; \
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO_BUILD) -o $(OUT) ./cmd/tg/ && echo "  $(OUT)" ; \
 	)
+
+install-md2tg:
+	$(GO_BUILD) -o $(BINARY_PARSER) ./cmd/md2tg/
+	mv $(BINARY_PARSER) $(GOPATH)/bin/$(BINARY_PARSER)
+	@echo "已安装: $(GOPATH)/bin/$(BINARY_PARSER)"
 
 clean:
 	rm -f $(BINARY)

@@ -1,10 +1,8 @@
-package util
+package api
 
 import (
 	"fmt"
 	"strings"
-
-	"tg/internal/api"
 )
 
 // ParseButtons 将按钮字符串列表解析为 InlineKeyboardMarkup。
@@ -16,19 +14,19 @@ import (
 //
 //	[]string{"按钮1:https://a.com,按钮2:https://b.com", "按钮3:https://c.com"}
 //	[]string{"按钮1:https://a.com|按钮2:https://b.com"}
-func ParseButtons(buttonRows []string) (*api.InlineKeyboardMarkup, error) {
+func ParseButtons(buttonRows []string) (*InlineKeyboardMarkup, error) {
 	if len(buttonRows) == 0 {
 		return nil, nil
 	}
 
-	var keyboard [][]api.InlineKeyboardButton
+	var keyboard [][]InlineKeyboardButton
 
 	for _, rowStr := range buttonRows {
 		// 支持 "|" 作为额外的行分隔符
 		rows := strings.Split(rowStr, "|")
 
 		for _, row := range rows {
-			var rowButtons []api.InlineKeyboardButton
+			var rowButtons []InlineKeyboardButton
 
 			cells := strings.Split(row, ",")
 			for _, cell := range cells {
@@ -44,7 +42,7 @@ func ParseButtons(buttonRows []string) (*api.InlineKeyboardMarkup, error) {
 
 				text := cell[:idx]
 				url := cell[idx+1:]
-				rowButtons = append(rowButtons, api.InlineKeyboardButton{
+				rowButtons = append(rowButtons, InlineKeyboardButton{
 					Text: text,
 					URL:  url,
 				})
@@ -59,5 +57,5 @@ func ParseButtons(buttonRows []string) (*api.InlineKeyboardMarkup, error) {
 	if len(keyboard) == 0 {
 		return nil, nil
 	}
-	return &api.InlineKeyboardMarkup{InlineKeyboard: keyboard}, nil
+	return &InlineKeyboardMarkup{InlineKeyboard: keyboard}, nil
 }

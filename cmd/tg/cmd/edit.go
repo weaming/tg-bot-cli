@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"tg/internal/api"
-	"tg/internal/util"
-
 	"github.com/spf13/cobra"
+	"github.com/weaming/tg-bot-cli/api"
 )
 
 var editCmd = &cobra.Command{
@@ -48,12 +46,12 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	text, err := util.ReadTextOrStdin(editText)
+	text, err := api.ReadTextOrStdin(editText)
 	if err != nil {
 		return err
 	}
 
-	replyMarkup, err := util.ParseButtons(editButtons)
+	replyMarkup, err := api.ParseButtons(editButtons)
 	if err != nil {
 		return err
 	}

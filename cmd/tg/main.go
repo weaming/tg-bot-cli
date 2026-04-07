@@ -1,8 +1,6 @@
 package main
 
-import (
-	"tg/cmd"
-)
+import "github.com/weaming/tg-bot-cli/cmd/tg/cmd"
 
 // 编译时注入示例：
 //

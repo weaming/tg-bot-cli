@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"tg/internal/api"
-	"tg/internal/util"
-
 	"github.com/spf13/cobra"
+	"github.com/weaming/tg-bot-cli/api"
 )
 
 var copyCmd = &cobra.Command{
@@ -56,12 +54,12 @@ func runCopy(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	caption, err := util.ReadTextOrStdin(copyCaption)
+	caption, err := api.ReadTextOrStdin(copyCaption)
 	if err != nil {
 		return err
 	}
 
-	replyMarkup, err := util.ParseButtons(copyButtons)
+	replyMarkup, err := api.ParseButtons(copyButtons)
 	if err != nil {
 		return err
 	}
