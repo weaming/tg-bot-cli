@@ -4,20 +4,24 @@ Telegram Bot API 命令行工具。
 
 ## 安装
 
-```bash
-# 开发用（通过环境变量传 token）
-make build
+需要 Go 1.25+，并确保 `$(go env GOPATH)/bin` 在 PATH 中。
 
-# 锁定 token 编译
-make install TOKEN=123:AAA... BINARY=tg
+```bash
+# 锁定 token 安装到 GOPATH/bin
+make install-tg TOKEN=123:AAA... BINARY=tg
 
 # 锁定 token + 目标 chat
-make install TOKEN=123:AAA... TARGET=@mychannel BINARY=tg-chan
+make install-tg TOKEN=123:AAA... TARGET=@mychannel BINARY=tg-chan
 
 # 多 bot / 多目标场景
-make install TOKEN=123:AAA... TARGET=-100123456 BINARY=tg-work
-make install TOKEN=456:BBB... TARGET=@personal  BINARY=tg-personal
+make install-tg TOKEN=123:AAA... TARGET=-100123456 BINARY=tg-work
+make install-tg TOKEN=456:BBB... TARGET=@personal  BINARY=tg-personal
+
+# 单独的程序转换 std markdown -> tg HTML
+make install-md2tg
 ```
+
+参考 [md2tg readme](cmd/md2tg/README.md)
 
 ## 优先级
 
@@ -53,7 +57,7 @@ tg me
 | `--chat`       | `-c` | 目标 chat（edit/delete/pin/info）                   |
 | `--text`       | `-m` | 消息文本                                            |
 | `--input-file` | `-i` | 从文件或 stdin（-）读取                             |
-| `--md2html`    | —    | 将 markdown 转换为 HTML                            |
+| `--md2html`    | —    | 将 markdown 转换为 HTML                             |
 | `--file`       | `-f` | 文件路径（自动识别类型）                            |
 | `--caption`    | `-c` | 文件说明                                            |
 | `--msg`        | `-m` | 消息 ID                                             |

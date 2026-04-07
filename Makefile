@@ -20,11 +20,6 @@ PLATFORMS = \
 	darwin/arm64 \
 	windows/amd64
 
-.PHONY: build install-tg dist-tg clean
-
-build:
-	$(GO_BUILD) -o $(BINARY) ./cmd/tg/
-
 install-tg:
 	@if [ -z "$(TOKEN)" ]; then echo "用法: make install TOKEN=<bot_token> [TARGET=<chat_id>] [BINARY=tg]"; exit 1; fi
 	$(GO_BUILD) -o $(BINARY) ./cmd/tg/
