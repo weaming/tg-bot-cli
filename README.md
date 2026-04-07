@@ -32,8 +32,9 @@ Proxy：`--proxy` / `-x` > `TG_PROXY` > `HTTPS_PROXY` / `HTTP_PROXY`
 ```bash
 tg config                                        # 查看当前配置来源
 tg send   -t <chat>  -m "内容"                  # 发文本
-tg send   -t <chat>  -m -                        # 从 stdin 读取
-tg send   -t <chat>  -f ./photo.jpg -c "说明"   # 发媒体文件
+tg send   -t <chat>  -i <file>                  # 从文件读取
+tg send   -t <chat>  -i - --md2html            # 从 stdin 读取并转 HTML
+tg send   -t <chat>  -f ./photo.jpg -c "说明"  # 发媒体文件
 tg edit   -c <chat> -m <id> -t "新内容"
 tg delete -c <chat> -m <id>
 tg forward -f <from> -t <to> -m <id>
@@ -50,7 +51,9 @@ tg me
 | -------------- | ---- | --------------------------------------------------- |
 | `--to`         | `-t` | 目标 chat，username 可省略 `@`                      |
 | `--chat`       | `-c` | 目标 chat（edit/delete/pin/info）                   |
-| `--text`       | `-m` | 消息文本，`-` 读 stdin                              |
+| `--text`       | `-m` | 消息文本                                            |
+| `--input-file` | `-i` | 从文件或 stdin（-）读取                             |
+| `--md2html`    | —    | 将 markdown 转换为 HTML                            |
 | `--file`       | `-f` | 文件路径（自动识别类型）                            |
 | `--caption`    | `-c` | 文件说明                                            |
 | `--msg`        | `-m` | 消息 ID                                             |
@@ -69,6 +72,15 @@ tg me
 # 发送 HTML 消息
 tg send -t mychannel -m "<b>加粗</b> 内容" --parse-mode HTML
 
+# 发送 MarkdownV2 消息
+tg send -t mychannel -m "这是 *粗体* 和 _斜体_" --parse-mode MarkdownV2
+
+# 从文件读取并自动转 HTML（.md 文件）
+tg send -t mychannel -i ./readme.md
+
+# 从 stdin 读取并转 HTML
+cat readme.md | tg send -t mychannel -i - --md2html
+
 # 带按钮
 tg send -t mychannel -m "点击" \
   -b "官网:https://example.com,文档:https://docs.example.com" \
@@ -78,7 +90,7 @@ tg send -t mychannel -m "点击" \
 tg send -t 123456789 -f ./image.png -c "说明"
 
 # 从管道发送
-echo "定时任务完成" | tg send -t alerts -m -
+echo "定时任务完成" | tg send -t alerts -i -
 
 # 获取 JSON 格式结果
 tg info -c mychannel -j

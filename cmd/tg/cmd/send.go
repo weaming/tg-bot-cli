@@ -18,6 +18,7 @@ var (
 	sendTo          string
 	sendText        string
 	sendInputFile   string
+	sendMd2Html     bool
 	sendParseMode   string
 	sendFile        string
 	sendCaption     string
@@ -35,7 +36,8 @@ func init() {
 	f := sendCmd.Flags()
 	f.StringVarP(&sendTo, "to", "t", "", "目标 chat_id 或 username")
 	f.StringVarP(&sendText, "text", "m", "", "消息文本")
-	f.StringVarP(&sendInputFile, "input-file", "i", "", "从文件读取消息文本")
+	f.StringVarP(&sendInputFile, "input-file", "i", "", "从文件或 stdin（-）读取消息文本")
+	f.BoolVarP(&sendMd2Html, "md2html", "", false, "将 markdown 转换为 HTML（.md 文件自动转换）")
 	f.StringVar(&sendParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.StringVarP(&sendFile, "file", "f", "", "要发送的文件路径")
 	f.StringVarP(&sendCaption, "caption", "c", "", "文件说明文字")
@@ -81,11 +83,11 @@ func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) erro
 	if text == "" {
 		return fmt.Errorf("--text 不能为空")
 	}
-	if text == "" {
-		return fmt.Errorf("--text 不能为空")
-	}
 
-	if sendParseMode == "MarkdownV2" {
+	if sendMd2Html || api.IsMarkdownFile(sendInputFile) {
+		text = api.ConvertMarkdownToHTML(text)
+		sendParseMode = "HTML"
+	} else if sendParseMode == "MarkdownV2" {
 		text = api.EscapeMarkdownV2(text)
 	}
 

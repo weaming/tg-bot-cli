@@ -16,6 +16,7 @@ var (
 	editMsgID       int
 	editText        string
 	editInputFile   string
+	editMd2Html     bool
 	editParseMode   string
 	editLinkPreview bool
 	editButtons     []string
@@ -28,7 +29,8 @@ func init() {
 	f.StringVarP(&editChat, "chat", "c", "", "chat_id 或 username")
 	f.IntVarP(&editMsgID, "msg", "m", 0, "要编辑的消息 ID（必填）")
 	f.StringVarP(&editText, "text", "t", "", "新文本（必填）")
-	f.StringVarP(&editInputFile, "input-file", "i", "", "从文件读取新文本")
+	f.StringVarP(&editInputFile, "input-file", "i", "", "从文件或 stdin（-）读取新文本")
+	f.BoolVarP(&editMd2Html, "md2html", "", false, "将 markdown 转换为 HTML（.md 文件自动转换）")
 	f.StringVar(&editParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.BoolVarP(&editLinkPreview, "link-preview", "l", false, "启用链接预览")
 	f.StringArrayVarP(&editButtons, "button", "b", nil, "Inline 按钮行，格式同 send")
@@ -54,6 +56,11 @@ func runEdit(cmd *cobra.Command, args []string) error {
 	}
 	if editText != "" {
 		text = editText
+	}
+
+	if editMd2Html || api.IsMarkdownFile(editInputFile) {
+		text = api.ConvertMarkdownToHTML(text)
+		editParseMode = "HTML"
 	}
 
 	replyMarkup, err := api.ParseButtons(editButtons)

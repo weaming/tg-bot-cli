@@ -3,7 +3,10 @@ package api
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/weaming/tg-bot-cli/parser"
 )
 
 // MarkdownV2ReservedChars 会被转义的字符
@@ -21,16 +24,16 @@ func EscapeMarkdownV2(text string) string {
 	return builder.String()
 }
 
-// ReadTextOrStdin 当 text 为 "-" 时从 stdin 读取，否则直接返回
+// ReadTextOrStdin 直接返回文本
 func ReadTextOrStdin(text string) (string, error) {
-	if text != "" && text != "-" {
-		return text, nil
-	}
-	return ReadFromInput(text)
+	return text, nil
 }
 
-// ReadFromInput 从 stdin 或文件读取内容
+// ReadFromInput 从文件或 stdin 读取内容，- 表示 stdin
 func ReadFromInput(text string) (string, error) {
+	if text == "" {
+		return "", nil
+	}
 	if text == "-" {
 		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
@@ -38,12 +41,19 @@ func ReadFromInput(text string) (string, error) {
 		}
 		return string(data), nil
 	}
-	if text != "" {
-		data, err := os.ReadFile(text)
-		if err != nil {
-			return "", err
-		}
-		return string(data), nil
+	data, err := os.ReadFile(text)
+	if err != nil {
+		return "", err
 	}
-	return "", nil
+	return string(data), nil
+}
+
+// IsMarkdownFile 检测文件扩展名是否为 .md
+func IsMarkdownFile(path string) bool {
+	return strings.ToLower(filepath.Ext(path)) == ".md"
+}
+
+// ConvertMarkdownToHTML 将 markdown 转换为 HTML
+func ConvertMarkdownToHTML(md string) string {
+	return parser.Convert(md, false)
 }

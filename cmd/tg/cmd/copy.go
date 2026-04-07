@@ -33,7 +33,7 @@ func init() {
 	f.StringVarP(&copyTo, "to", "t", "", "目标 chat_id 或 username")
 	f.IntVarP(&copyMsgID, "msg", "m", 0, "消息 ID（必填）")
 	f.StringVarP(&copyCaption, "caption", "c", "", "覆盖原始说明文字")
-	f.StringVar(&copyCaptionFile, "caption-file", "", "从文件读取说明文字")
+	f.StringVar(&copyCaptionFile, "caption-file", "", "从文件或 stdin（-）读取说明文字")
 	f.StringVar(&copyParseMode, "parse-mode", "", "解析模式")
 	f.IntVar(&copyThread, "thread", 0, "目标话题 ID")
 	f.IntVarP(&copyReplyTo, "reply-to", "r", 0, "回复的消息 ID")
