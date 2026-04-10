@@ -65,6 +65,7 @@ type SendMediaParams struct {
 	DisableNotification bool
 	ProtectContent      bool
 	ReplyMarkup         *InlineKeyboardMarkup
+	ForceDocument       bool
 }
 
 // EditMessageTextParams 对应 editMessageText 的请求参数

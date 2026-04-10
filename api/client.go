@@ -167,6 +167,9 @@ func detectMediaMethod(path string) (apiMethod, fileField string) {
 
 func (c *Client) SendMedia(params SendMediaParams) (*Message, error) {
 	apiMethod, fileField := detectMediaMethod(params.FilePath)
+	if params.ForceDocument {
+		apiMethod, fileField = "sendDocument", "document"
+	}
 
 	fields := map[string]string{
 		"chat_id":    params.ChatID,

@@ -28,6 +28,7 @@ var (
 	sendProtect     bool
 	sendThread      int
 	sendButtons     []string
+	sendAsDoc       bool
 )
 
 func init() {
@@ -47,6 +48,7 @@ func init() {
 	f.BoolVarP(&sendProtect, "protect", "p", false, "防止转发和保存")
 	f.IntVar(&sendThread, "thread", 0, "话题 ID（message_thread_id）")
 	f.StringArrayVarP(&sendButtons, "button", "b", nil, "Inline 按钮行，格式：文字:URL,文字2:URL2（多次使用添加多行，| 分隔行）")
+	f.BoolVar(&sendAsDoc, "as-doc", false, "强制作为文档发送（绕过图片尺寸限制）")
 }
 
 func runSend(cmd *cobra.Command, args []string) error {
@@ -134,6 +136,7 @@ func sendMedia(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) error 
 		DisableNotification: sendSilent,
 		ProtectContent:      sendProtect,
 		ReplyMarkup:         replyMarkup,
+		ForceDocument:       sendAsDoc,
 	})
 	if err != nil {
 		return err
