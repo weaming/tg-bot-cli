@@ -62,6 +62,34 @@ func maxInt(a, b int) int {
 	return b
 }
 
+// displayWidth returns the display width of text in Telegram <pre>.
+// CJK characters render at ~1 column width, same as ASCII.
+func displayWidth(text string) int {
+	w := 0
+	for _, r := range text {
+		cp := int(r)
+		if (0x1100 <= cp && cp <= 0x115F) ||
+			(0x2E80 <= cp && cp <= 0x303F) ||
+			(0x3040 <= cp && cp <= 0x33FF) ||
+			(0x3400 <= cp && cp <= 0x4DBF) ||
+			(0x4E00 <= cp && cp <= 0xA4FF) ||
+			(0xAC00 <= cp && cp <= 0xD7FF) ||
+			(0xF900 <= cp && cp <= 0xFAFF) ||
+			(0xFE10 <= cp && cp <= 0xFE6F) ||
+			(0xFF01 <= cp && cp <= 0xFF60) ||
+			(0xFFE0 <= cp && cp <= 0xFFE6) {
+			w += 1
+		} else {
+			w += 1
+		}
+	}
+	return w
+}
+
+func ljust(text string, width int) string {
+	return text + strings.Repeat(" ", maxInt(0, width-displayWidth(text)))
+}
+
 type listState struct {
 	ordered bool
 	start   int
@@ -395,9 +423,8 @@ func (c *Converter) renderTableTo(buf *bytes.Buffer, node gmAst.Node, source []b
 		}
 	}
 
-	buf.WriteString("\n")
-
 	if c.splitTable {
+		buf.WriteString("\n")
 		for _, row := range dataRows {
 			for i, cell := range row {
 				if i < len(headers) && headers[i] != "" {
@@ -412,37 +439,61 @@ func (c *Converter) renderTableTo(buf *bytes.Buffer, node gmAst.Node, source []b
 			}
 			buf.WriteString("\n")
 		}
-	} else {
-		buf.WriteString("<pre><code>")
+		return
+	}
 
-		for i, h := range headers {
-			if i > 0 {
-				buf.WriteString(" | ")
+	// Grid table format (gentleman style)
+	allRows := append([][]string{headers}, dataRows...)
+	numCols := 0
+	for _, row := range allRows {
+		if len(row) > numCols {
+			numCols = len(row)
+		}
+	}
+	if numCols == 0 {
+		return
+	}
+
+	// Calculate column widths
+	colWidths := make([]int, numCols)
+	for _, row := range allRows {
+		for i := 0; i < numCols; i++ {
+			cell := ""
+			if i < len(row) {
+				cell = row[i]
 			}
-			buf.WriteString(h)
+			w := displayWidth(cell)
+			if w > colWidths[i] {
+				colWidths[i] = w
+			}
+		}
+	}
+
+	// Build output lines
+	buf.WriteString("<pre>")
+	for idx, row := range allRows {
+		for i := 0; i < numCols; i++ {
+			cell := ""
+			if i < len(row) {
+				cell = row[i]
+			}
+			buf.WriteString(ljust(cell, colWidths[i]))
+			if i < numCols-1 {
+				buf.WriteString("  ")
+			}
 		}
 		buf.WriteByte('\n')
-
-		for i := range headers {
-			if i > 0 {
-				buf.WriteString("|")
-			}
-			buf.WriteString("---")
-		}
-		buf.WriteByte('\n')
-
-		for _, row := range dataRows {
-			for i, cell := range row {
-				if i > 0 {
-					buf.WriteString(" | ")
+		if idx == 0 {
+			for i := 0; i < numCols; i++ {
+				buf.WriteString(strings.Repeat("─", colWidths[i]))
+				if i < numCols-1 {
+					buf.WriteString("")
 				}
-				buf.WriteString(cell)
 			}
 			buf.WriteByte('\n')
 		}
-
-		buf.WriteString("</code></pre>\n\n")
 	}
+	buf.WriteString("</pre>\n\n")
 }
 
 func Convert(input string, splitTable bool) string {
