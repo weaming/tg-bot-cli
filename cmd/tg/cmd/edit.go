@@ -17,6 +17,7 @@ var (
 	editText        string
 	editInputFile   string
 	editMd2Html     bool
+	editSplitTable  bool
 	editParseMode   string
 	editLinkPreview bool
 	editButtons     []string
@@ -31,6 +32,7 @@ func init() {
 	f.StringVarP(&editText, "text", "t", "", "新文本（必填）")
 	f.StringVarP(&editInputFile, "input-file", "i", "", "从文件或 stdin（-）读取新文本")
 	f.BoolVarP(&editMd2Html, "md2html", "", false, "将 markdown 转换为 HTML（.md 文件自动转换）")
+	f.BoolVarP(&editSplitTable, "split-table", "", false, "将 markdown 表格拆分成多行列表模式")
 	f.StringVar(&editParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.BoolVarP(&editLinkPreview, "link-preview", "l", false, "启用链接预览")
 	f.StringArrayVarP(&editButtons, "button", "b", nil, "Inline 按钮行，格式同 send")
@@ -59,7 +61,7 @@ func runEdit(cmd *cobra.Command, args []string) error {
 	}
 
 	if editMd2Html || api.IsMarkdownFile(editInputFile) {
-		text = api.ConvertMarkdownToHTML(text)
+		text = api.ConvertMarkdownToHTML(text, editSplitTable)
 		editParseMode = "HTML"
 	}
 

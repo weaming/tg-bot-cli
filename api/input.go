@@ -54,6 +54,6 @@ func IsMarkdownFile(path string) bool {
 }
 
 // ConvertMarkdownToHTML 将 markdown 转换为 HTML
-func ConvertMarkdownToHTML(md string) string {
-	return parser.Convert(md, false)
+func ConvertMarkdownToHTML(md string, splitTable bool) string {
+	return parser.Convert(md, splitTable)
 }

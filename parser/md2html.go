@@ -425,20 +425,20 @@ func (c *Converter) renderTableTo(buf *bytes.Buffer, node gmAst.Node, source []b
 
 	if c.splitTable {
 		buf.WriteString("\n")
+		var rows []string
 		for _, row := range dataRows {
+			var cells []string
 			for i, cell := range row {
-				if i < len(headers) && headers[i] != "" {
-					buf.WriteString("<b>")
-					buf.WriteString(headers[i])
-					buf.WriteString("</b>: ")
-				}
-				buf.WriteString(cell)
-				if i < len(row)-1 {
-					buf.WriteString(", ")
+				header := headers[i]
+				if header == "" {
+					cells = append(cells, fmt.Sprintf("<b>%s</b>: %s", headers[i], cell))
+				} else {
+					cells = append(cells, fmt.Sprintf("<b>%s</b>: %s", headers[i], cell))
 				}
 			}
-			buf.WriteString("\n")
+			rows = append(rows, strings.Join(cells, "\n"))
 		}
+		buf.WriteString(strings.Join(rows, "\n───────────────\n") + "\n")
 		return
 	}
 
