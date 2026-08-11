@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -36,6 +37,38 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&flagToken, "token", "T", "", "Bot Token（优先于环境变量和编译内置）")
 	rootCmd.PersistentFlags().StringVarP(&flagProxy, "proxy", "x", "", "HTTP/SOCKS5 代理，如 http://127.0.0.1:7890（优先于 TG_PROXY 和系统环境变量）")
 	rootCmd.PersistentFlags().BoolVarP(&flagJSON, "json", "j", false, "以 JSON 格式输出完整结果")
+	rootCmd.SetHelpFunc(printHelp)
+}
+
+func printHelp(command *cobra.Command, _ []string) {
+	if _, err := fmt.Fprint(command.OutOrStdout(), command.UsageString()); err != nil {
+		fmt.Fprintf(command.ErrOrStderr(), "输出帮助信息失败: %v\n", err)
+		return
+	}
+
+	printCompiledConfig(command.OutOrStdout())
+}
+
+func printCompiledConfig(writer io.Writer) {
+	botID := extractBotID(CompiledToken)
+	if botID != "" {
+		fmt.Fprintf(writer, "\n内置 Bot ID: %s\n", botID)
+	}
+	if CompiledTarget != "" {
+		fmt.Fprintf(writer, "内置 Target: %s\n", CompiledTarget)
+	}
+}
+
+func extractBotID(token string) string {
+	if token == "" {
+		return ""
+	}
+
+	botID, _, hasSecret := strings.Cut(token, ":")
+	if !hasSecret || botID == "" {
+		return ""
+	}
+	return botID
 }
 
 // resolveToken 按优先级返回 token：--token > TG_BOT_TOKEN > 编译内置
