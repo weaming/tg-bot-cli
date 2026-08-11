@@ -223,6 +223,119 @@ func TestRichMarkdownSuperscriptAndSubscript(t *testing.T) {
 	}
 }
 
+func TestRichASTProtectsCodeAndConvertsExtensions(t *testing.T) {
+	input := "`$x^2$ ==mark== ||secret|| ^sup^ ~sub~ ****`\n\n" +
+		"```text\n$x^2$ ==mark== ||secret|| ^sup^ ~sub~ ****\n```\n\n" +
+		"$x^2$ ==mark== ||secret|| ^sup^ ~sub~ ****"
+	result := ConvertRichHTML(input)
+
+	for _, expected := range []string{
+		"<code>$x^2$ ==mark== ||secret|| ^sup^ ~sub~ ****</code>",
+		"<pre><code class=\"language-text\">$x^2$ ==mark== ||secret|| ^sup^ ~sub~ ****",
+		"<tg-math>x^2</tg-math>",
+		"<mark>mark</mark>",
+		"<tg-spoiler>secret</tg-spoiler>",
+		"<sup>sup</sup>",
+		"<sub>sub</sub>",
+	} {
+		if !strings.Contains(result, expected) {
+			t.Errorf("Rich AST conversion missing %q in %q", expected, result)
+		}
+	}
+}
+
+func TestRichBlockMathSplitsParagraph(t *testing.T) {
+	input := "before $$x^2$$ after"
+	result := ConvertRichHTML(input)
+	expected := "<p>before</p>\n<tg-math-block>x^2</tg-math-block>\n<p>after</p>"
+
+	if result != expected {
+		t.Errorf("block math was not split into block HTML: got %q, want %q", result, expected)
+	}
+}
+
+func TestRichBlockMathInsideListStaysInList(t *testing.T) {
+	input := "- before $$x^2$$ after"
+	result := ConvertRichHTML(input)
+	expected := "<ul>\n<li>before <tg-math-block>x^2</tg-math-block> after</li>\n</ul>"
+
+	if result != expected {
+		t.Errorf("block math left its list: got %q, want %q", result, expected)
+	}
+}
+
+func TestConvertRichMarkdownPreservesHTMLCodeContent(t *testing.T) {
+	input := "<code>^x^ ~x~ ==mark== ||secret||</code>"
+	result := ConvertRichMarkdown(input)
+
+	if result != input {
+		t.Errorf("HTML code content was changed: got %q, want %q", result, input)
+	}
+}
+
+func TestRichHTMLPreservesInlineHTMLCodeContent(t *testing.T) {
+	input := "<code>^x^ ~x~ ==mark== ||secret||</code>"
+	result := ConvertRichHTML(input)
+	expected := "<p><code>^x^ ~x~ ==mark== ||secret||</code></p>"
+
+	if result != expected {
+		t.Errorf("inline HTML code content was parsed as Markdown: got %q, want %q", result, expected)
+	}
+}
+
+func TestRichHTMLPreservesInlineHTMLCodeAttributes(t *testing.T) {
+	input := `<code class="language-text">^x^ ~x~</code>`
+	result := ConvertRichHTML(input)
+	expected := `<p><code class="language-text">^x^ ~x~</code></p>`
+
+	if result != expected {
+		t.Errorf("inline HTML code was parsed as Markdown: got %q, want %q", result, expected)
+	}
+}
+
+func TestRichHTMLCodeTagScanPreservesQuotedAttributes(t *testing.T) {
+	input := `<CODE data-value="a > b">^x^</CODE>`
+	result := ConvertRichHTML(input)
+	expected := `<p><CODE data-value="a > b">^x^</CODE></p>`
+
+	if result != expected {
+		t.Errorf("HTML code tag scan changed quoted attributes: got %q, want %q", result, expected)
+	}
+}
+
+func TestRichHTMLPreservesNestedMarkdownInExtensions(t *testing.T) {
+	input := "==**bold**== ||_italic_||"
+	result := ConvertRichHTML(input)
+	expected := "<p><mark><b>bold</b></mark> <tg-spoiler><i>italic</i></tg-spoiler></p>"
+
+	if result != expected {
+		t.Errorf("nested Markdown in Rich extensions was not rendered: got %q, want %q", result, expected)
+	}
+}
+
+func TestRichHTMLNestedMarkdownFastPath(t *testing.T) {
+	for _, testCase := range []struct {
+		content  string
+		expected bool
+	}{
+		{content: "plain text & symbols", expected: false},
+		{content: "**bold**", expected: true},
+		{content: `escaped \* text`, expected: true},
+		{content: `<u>underlined</u>`, expected: true},
+	} {
+		if result := hasNestedRichMarkdown(testCase.content); result != testCase.expected {
+			t.Errorf("nested Markdown detection for %q: got %t, want %t", testCase.content, result, testCase.expected)
+		}
+	}
+
+	input := "==plain text & symbols=="
+	result := ConvertRichHTML(input)
+	expected := "<p><mark>plain text &amp; symbols</mark></p>"
+	if result != expected {
+		t.Errorf("plain Rich extension content was rendered incorrectly: got %q, want %q", result, expected)
+	}
+}
+
 func TestConvertRichMarkdownExtensions(t *testing.T) {
 	input := "**bold** ^sup^ ~sub~ ~~deleted~~ `^code^` $x^2+y^2$"
 	expected := "**bold** <sup>sup</sup> <sub>sub</sub> ~~deleted~~ `^code^` $x^2+y^2$"
@@ -251,7 +364,7 @@ func TestConvertRichMarkdownOfficialHTMLSampleUnchanged(t *testing.T) {
 	}
 }
 
-func TestConvertRichHTMLUsesRichMarkdownPreprocessing(t *testing.T) {
+func TestConvertRichHTMLMatchesRichMarkdownExtensions(t *testing.T) {
 	input := "**bold** ^sup^ ~sub~ ~~deleted~~"
 	expected := ConvertRichHTML(ConvertRichMarkdown(input))
 	result := ConvertRichHTML(input)

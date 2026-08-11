@@ -11,18 +11,17 @@ import (
 )
 
 func convertMarkdown(input string, splitTable bool, richMode string) (string, error) {
-	switch strings.ToLower(strings.TrimSpace(richMode)) {
+	normalizedRichMode := strings.ToLower(strings.TrimSpace(richMode))
+	if normalizedRichMode != "" && splitTable {
+		return "", fmt.Errorf("--split-table 不能与 --rich 一起使用")
+	}
+
+	switch normalizedRichMode {
 	case "":
 		return parser.Convert(input, splitTable), nil
 	case "html":
-		if splitTable {
-			return "", fmt.Errorf("--split-table 不能与 --rich 一起使用")
-		}
 		return parser.ConvertRichHTML(input), nil
 	case "md":
-		if splitTable {
-			return "", fmt.Errorf("--split-table 不能与 --rich 一起使用")
-		}
 		return parser.ConvertRichMarkdown(input), nil
 	default:
 		return "", fmt.Errorf("--rich 只支持 html 或 md，收到: %q", richMode)
@@ -31,7 +30,7 @@ func convertMarkdown(input string, splitTable bool, richMode string) (string, er
 
 func main() {
 	splitTable := flag.Bool("split-table", false, "Split table into key:value format")
-	richMode := flag.String("rich", "", "Output Telegram Rich format: html or md")
+	richMode := flag.String("rich", "", "Output Telegram Rich format: md or html")
 	flag.Parse()
 
 	input, err := io.ReadAll(os.Stdin)

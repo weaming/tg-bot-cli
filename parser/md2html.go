@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -91,25 +90,11 @@ func maxInt(a, b int) int {
 // displayWidth returns the display width of text in Telegram <pre>.
 // CJK characters render at ~1 column width, same as ASCII.
 func displayWidth(text string) int {
-	w := 0
-	for _, r := range text {
-		cp := int(r)
-		if (0x1100 <= cp && cp <= 0x115F) ||
-			(0x2E80 <= cp && cp <= 0x303F) ||
-			(0x3040 <= cp && cp <= 0x33FF) ||
-			(0x3400 <= cp && cp <= 0x4DBF) ||
-			(0x4E00 <= cp && cp <= 0xA4FF) ||
-			(0xAC00 <= cp && cp <= 0xD7FF) ||
-			(0xF900 <= cp && cp <= 0xFAFF) ||
-			(0xFE10 <= cp && cp <= 0xFE6F) ||
-			(0xFF01 <= cp && cp <= 0xFF60) ||
-			(0xFFE0 <= cp && cp <= 0xFFE6) {
-			w += 1
-		} else {
-			w += 1
-		}
+	width := 0
+	for range text {
+		width++
 	}
-	return w
+	return width
 }
 
 func ljust(text string, width int) string {
@@ -126,23 +111,23 @@ type Converter struct {
 	listDepth  int
 	listStack  []listState
 	splitTable bool
-	richTable  bool
+	isRichHTML bool
+	markdown   goldmark.Markdown
 }
 
 func NewConverter() *Converter {
 	return &Converter{}
 }
 
-func (c *Converter) Reset() {
-	c.listDepth = 0
-	c.listStack = c.listStack[:0]
+// markdownParser 返回当前输出模式对应的可复用 Goldmark 实例。
+func (c *Converter) markdownParser() goldmark.Markdown {
+	if c.markdown == nil {
+		c.markdown = newMarkdown(c.isRichHTML)
+	}
+	return c.markdown
 }
 
 func (c *Converter) preProcess(input string) string {
-	if c.richTable {
-		return c.preProcessRich(input)
-	}
-
 	var result strings.Builder
 	i := 0
 	for {
@@ -204,46 +189,22 @@ func (c *Converter) preProcess(input string) string {
 	return input
 }
 
-var (
-	richBlockMathPattern  = regexp.MustCompile(`(?s)\$\$(.+?)\$\$`)
-	richInlineMathPattern = regexp.MustCompile(`(^|[^$])\$([^$\n]+)\$([^$]|$)`)
-	richMarkPattern       = regexp.MustCompile(`==([^=\n]+)==`)
-	richSpoilerPattern    = regexp.MustCompile(`\|\|([^|\n]+)\|\|`)
-	richSupPattern        = regexp.MustCompile(`(^|[^\^])\^([^\^\[\]\s]+)\^`)
-	richSubPattern        = regexp.MustCompile(`(^|[^~])~([^~\s]+)~([^~]|$)`)
-	richProtectedPattern  = regexp.MustCompile("(?s)```.*?```|`[^`\\n]*`|\\$\\$.*?\\$\\$|\\$[^$\\n]+\\$")
-)
-
-func replaceRichSuperscriptAndSubscript(input string) string {
-	protectedRegions := make([]string, 0)
-	protectedInput := richProtectedPattern.ReplaceAllStringFunc(input, func(region string) string {
-		index := len(protectedRegions)
-		protectedRegions = append(protectedRegions, region)
-		return fmt.Sprintf("\\x00tg-rich-region-%d\\x00", index)
-	})
-
-	protectedInput = richSupPattern.ReplaceAllString(protectedInput, `$1<sup>$2</sup>`)
-	protectedInput = richSubPattern.ReplaceAllString(protectedInput, `$1<sub>$2</sub>$3`)
-
-	for index, region := range protectedRegions {
-		placeholder := fmt.Sprintf("\\x00tg-rich-region-%d\\x00", index)
-		protectedInput = strings.Replace(protectedInput, placeholder, region, 1)
+func newMarkdown(isRichHTML bool) goldmark.Markdown {
+	extensions := []goldmark.Extender{extension.GFM}
+	if isRichHTML {
+		extensions = append(extensions, extension.Footnote)
+	}
+	parserOptions := []gmParser.Option{
+		gmParser.WithAutoHeadingID(),
+	}
+	if isRichHTML {
+		parserOptions = append(parserOptions, richSyntaxParserOption())
 	}
 
-	return protectedInput
-}
-
-func (c *Converter) preProcessRich(input string) string {
-	input = richBlockMathPattern.ReplaceAllString(input, "\n\n<tg-math-block>$1</tg-math-block>\n\n")
-	input = richInlineMathPattern.ReplaceAllString(input, `$1<tg-math>$2</tg-math>$3`)
-	input = richMarkPattern.ReplaceAllString(input, `<mark>$1</mark>`)
-	input = richSpoilerPattern.ReplaceAllString(input, `<tg-spoiler>$1</tg-spoiler>`)
-
-	input = strings.ReplaceAll(input, "****", "** **")
-	input = strings.ReplaceAll(input, "____", "__ __")
-	input = strings.ReplaceAll(input, "**__", "** __")
-	input = strings.ReplaceAll(input, "__**", "__ **")
-	return input
+	return goldmark.New(
+		goldmark.WithExtensions(extensions...),
+		goldmark.WithParserOptions(parserOptions...),
+	)
 }
 
 func (c *Converter) render(node gmAst.Node, source []byte) string {
@@ -260,7 +221,7 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		}
 
 	case gmAst.KindHeading:
-		if c.richTable {
+		if c.isRichHTML {
 			heading := node.(*gmAst.Heading)
 			tagName := fmt.Sprintf("h%d", heading.Level)
 			buf.WriteString("<")
@@ -277,8 +238,11 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		buf.WriteString("</b>\n\n")
 
 	case gmAst.KindParagraph:
-		if c.richTable && c.listDepth == 0 {
+		if c.isRichHTML && c.listDepth == 0 {
 			if c.renderRichMediaParagraph(buf, node, source) {
+				return
+			}
+			if c.renderRichBlockParagraph(buf, node, source) {
 				return
 			}
 
@@ -358,7 +322,7 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		}
 
 	case gmAst.KindCodeBlock, gmAst.KindFencedCodeBlock:
-		if c.richTable {
+		if c.isRichHTML {
 			if fencedCodeBlock, ok := node.(*gmAst.FencedCodeBlock); ok && strings.EqualFold(string(fencedCodeBlock.Language(source)), "math") {
 				buf.WriteString("<tg-math-block>")
 				c.renderCodeLines(buf, node, source)
@@ -380,7 +344,7 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		buf.WriteString("</code></pre>\n\n")
 
 	case gmAst.KindBlockquote:
-		if c.richTable {
+		if c.isRichHTML {
 			buf.WriteString("<blockquote>")
 			for child := node.FirstChild(); child != nil; child = child.NextSibling() {
 				c.renderTo(buf, child, source)
@@ -396,7 +360,7 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 
 	case gmAst.KindList:
 		n := node.(*gmAst.List)
-		if c.richTable {
+		if c.isRichHTML {
 			if n.IsOrdered() {
 				buf.WriteString("<ol")
 				if n.Start > 1 {
@@ -439,7 +403,7 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		c.listDepth--
 
 	case gmAst.KindListItem:
-		if c.richTable {
+		if c.isRichHTML {
 			buf.WriteString("<li>")
 			for child := node.FirstChild(); child != nil; child = child.NextSibling() {
 				c.renderTo(buf, child, source)
@@ -471,14 +435,14 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		buf.WriteByte('\n')
 
 	case gmAst.KindThematicBreak:
-		if c.richTable {
+		if c.isRichHTML {
 			buf.WriteString("<hr/>\n")
 			return
 		}
 		buf.WriteString("\n-------------------\n\n")
 
 	case extAst.KindFootnoteList:
-		if c.richTable {
+		if c.isRichHTML {
 			buf.WriteString("<hr/><ol>\n")
 			for child := node.FirstChild(); child != nil; child = child.NextSibling() {
 				c.renderTo(buf, child, source)
@@ -488,7 +452,7 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		}
 
 	case extAst.KindFootnote:
-		if c.richTable {
+		if c.isRichHTML {
 			footnote := node.(*extAst.Footnote)
 			fmt.Fprintf(buf, `<li><a name="fn-%d"></a>`, footnote.Index)
 			for child := node.FirstChild(); child != nil; child = child.NextSibling() {
@@ -499,7 +463,7 @@ func (c *Converter) renderTo(buf *bytes.Buffer, node gmAst.Node, source []byte) 
 		}
 
 	case gmAst.KindHTMLBlock:
-		if c.richTable {
+		if c.isRichHTML {
 			c.renderRawBlockHTML(buf, node, source)
 			return
 		}
@@ -522,6 +486,40 @@ func (c *Converter) renderInlineChildrenTo(buf *bytes.Buffer, node gmAst.Node, s
 	for child := node.FirstChild(); child != nil; child = child.NextSibling() {
 		c.renderInlineTo(buf, child, source)
 	}
+}
+
+func (c *Converter) renderRichBlockParagraph(buf *bytes.Buffer, node gmAst.Node, source []byte) bool {
+	hasBlockMath := false
+	var paragraphBuffer bytes.Buffer
+	for child := node.FirstChild(); child != nil; child = child.NextSibling() {
+		richNode, isRichNode := child.(*richSyntaxNode)
+		if !isRichNode || !richNode.isBlockMath() {
+			c.renderInlineTo(&paragraphBuffer, child, source)
+			continue
+		}
+
+		hasBlockMath = true
+		if paragraphBuffer.Len() > 0 {
+			paragraphContent := strings.TrimSpace(paragraphBuffer.String())
+			if paragraphContent != "" {
+				fmt.Fprintf(buf, "<p>%s</p>\n", paragraphContent)
+			}
+			paragraphBuffer.Reset()
+		}
+		c.renderInlineTo(buf, child, source)
+		buf.WriteByte('\n')
+	}
+
+	if !hasBlockMath {
+		return false
+	}
+	if paragraphBuffer.Len() > 0 {
+		paragraphContent := strings.TrimSpace(paragraphBuffer.String())
+		if paragraphContent != "" {
+			fmt.Fprintf(buf, "<p>%s</p>\n", paragraphContent)
+		}
+	}
+	return true
 }
 
 func (c *Converter) renderRichMediaParagraph(buf *bytes.Buffer, node gmAst.Node, source []byte) bool {
@@ -630,6 +628,9 @@ func (c *Converter) renderRawBlockHTML(buf *bytes.Buffer, node gmAst.Node, sourc
 
 func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []byte) {
 	switch n := node.(type) {
+	case *richSyntaxNode:
+		c.renderRichSyntaxTo(buf, n, source)
+
 	case *gmAst.Text:
 		textVal := string(n.Segment.Value(source))
 		buf.WriteString(escapeHTML(textVal))
@@ -649,7 +650,7 @@ func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []
 		}
 
 	case *extAst.Strikethrough:
-		if c.richTable {
+		if c.isRichHTML {
 			buf.WriteString("<del>")
 			c.renderInlineChildrenTo(buf, node, source)
 			buf.WriteString("</del>")
@@ -658,7 +659,7 @@ func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []
 		c.renderInlineChildrenTo(buf, node, source)
 
 	case *extAst.TaskCheckBox:
-		if c.richTable {
+		if c.isRichHTML {
 			buf.WriteString(`<input type="checkbox"`)
 			if n.IsChecked {
 				buf.WriteString(" checked")
@@ -669,7 +670,7 @@ func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []
 		buf.WriteString("☐ ")
 
 	case *gmAst.AutoLink:
-		if c.richTable {
+		if c.isRichHTML {
 			url := string(n.URL(source))
 			buf.WriteString(`<a href="`)
 			buf.WriteString(escapeHTML(url))
@@ -681,21 +682,21 @@ func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []
 		buf.WriteString(escapeHTML(string(n.Label(source))))
 
 	case *gmAst.RawHTML:
-		if c.richTable {
-			buf.WriteString(string(n.Text(source)))
+		if c.isRichHTML {
+			buf.WriteString(string(n.Segments.Value(source)))
 			return
 		}
-		buf.WriteString(escapeHTML(string(n.Text(source))))
+		buf.WriteString(escapeHTML(string(n.Segments.Value(source))))
 
 	case *extAst.FootnoteLink:
-		if c.richTable {
+		if c.isRichHTML {
 			fmt.Fprintf(buf, `<a name="fnref-%d"></a><a href="#fn-%d">[%d]</a>`, n.Index, n.Index, n.Index)
 			return
 		}
 		fmt.Fprintf(buf, "[%d]", n.Index)
 
 	case *extAst.FootnoteBacklink:
-		if c.richTable {
+		if c.isRichHTML {
 			fmt.Fprintf(buf, `<a href="#fnref-%d">↩</a>`, n.Index)
 			return
 		}
@@ -708,7 +709,7 @@ func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []
 
 	case *gmAst.Link:
 		dest := string(n.Destination)
-		if !c.richTable && !isAllowedScheme(dest) {
+		if !c.isRichHTML && !isAllowedScheme(dest) {
 			c.renderInlineChildrenTo(buf, node, source)
 			return
 		}
@@ -721,7 +722,7 @@ func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []
 	case *gmAst.Image:
 		dest := string(n.Destination)
 		title := string(n.Title)
-		if c.richTable {
+		if c.isRichHTML {
 			c.renderRichImage(buf, n, source)
 			return
 		}
@@ -742,9 +743,57 @@ func (c *Converter) renderInlineTo(buf *bytes.Buffer, node gmAst.Node, source []
 	}
 }
 
+func (c *Converter) renderRichSyntaxTo(buf *bytes.Buffer, node *richSyntaxNode, source []byte) {
+	if node.kind == richSyntaxHTMLCode {
+		buf.WriteString(string(node.segment.Value(source)))
+		return
+	}
+
+	tagName := richSyntaxTag(node.kind)
+	buf.WriteByte('<')
+	buf.WriteString(tagName)
+	buf.WriteByte('>')
+	if node.kind == richSyntaxMark || node.kind == richSyntaxSpoiler {
+		c.renderRichSyntaxChildren(buf, node.contentValue(source))
+	} else {
+		buf.WriteString(escapeHTML(node.contentValue(source)))
+	}
+	buf.WriteString("</")
+	buf.WriteString(tagName)
+	buf.WriteByte('>')
+}
+
+// renderRichSyntaxChildren 重新解析标记和剧透内容，以保留其中的嵌套 Markdown。
+func (c *Converter) renderRichSyntaxChildren(buf *bytes.Buffer, content string) {
+	if !hasNestedRichMarkdown(content) {
+		buf.WriteString(escapeHTML(content))
+		return
+	}
+
+	source := []byte(content)
+	document := c.markdownParser().Parser().Parse(text.NewReader(source))
+	for child := document.FirstChild(); child != nil; child = child.NextSibling() {
+		if child.Kind() == gmAst.KindParagraph {
+			c.renderInlineChildrenTo(buf, child, source)
+			continue
+		}
+		c.renderTo(buf, child, source)
+	}
+}
+
+func hasNestedRichMarkdown(content string) bool {
+	for index := 0; index < len(content); index++ {
+		switch content[index] {
+		case '\\', '`', '*', '_', '[', '<', '^', '~', '$', '=', '|':
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Converter) renderTableTo(buf *bytes.Buffer, node gmAst.Node, source []byte) {
 	table := node.(*extAst.Table)
-	if c.richTable {
+	if c.isRichHTML {
 		c.renderRichTableTo(buf, table, source)
 		return
 	}
@@ -891,37 +940,29 @@ func Convert(input string, splitTable bool) string {
 
 // ConvertRichHTML 将 Markdown 转换为 Rich Message HTML，并保留原生表格结构。
 func ConvertRichHTML(input string) string {
-	input = ConvertRichMarkdown(input)
-
 	c := NewConverter()
-	c.richTable = true
-	return c.convert(input)
+	c.isRichHTML = true
+	return c.convertPrepared(input)
 }
 
 // ConvertRichMarkdown 将 Markdown 扩展转换为可嵌入 Rich Markdown 的 HTML 标签。
 func ConvertRichMarkdown(input string) string {
-	return replaceRichSuperscriptAndSubscript(input)
+	return rewriteRichTextRanges(input, func(text string) string {
+		return convertRichMarkdownText(text)
+	})
 }
 
 func (c *Converter) convert(input string) string {
-	input = c.preProcess(input)
+	return c.convertPrepared(c.preProcess(input))
+}
 
-	extensions := []goldmark.Extender{extension.GFM}
-	if c.richTable {
-		extensions = append(extensions, extension.Footnote)
-	}
-
-	md := goldmark.New(
-		goldmark.WithExtensions(extensions...),
-		goldmark.WithParserOptions(
-			gmParser.WithAutoHeadingID(),
-		),
-	)
-
-	reader := text.NewReader([]byte(input))
+func (c *Converter) convertPrepared(input string) string {
+	source := []byte(input)
+	reader := text.NewReader(source)
+	md := c.markdownParser()
 	doc := md.Parser().Parse(reader)
 
-	result := c.render(doc, []byte(input))
+	result := c.render(doc, source)
 
 	result = strings.ReplaceAll(result, "<br>", "\n")
 	result = strings.ReplaceAll(result, "<br/>", "\n")
