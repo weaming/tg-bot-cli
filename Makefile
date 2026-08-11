@@ -26,6 +26,12 @@ install-tg:
 	mv $(BINARY) $(GOPATH)/bin/$(BINARY)
 	@echo "已安装: $(GOPATH)/bin/$(BINARY)"
 
+install-md2tg:
+	$(GO_BUILD) -o $(BINARY_PARSER) ./cmd/md2tg/
+	mv $(BINARY_PARSER) $(GOPATH)/bin/$(BINARY_PARSER)
+	@echo "已安装: $(GOPATH)/bin/$(BINARY_PARSER)"
+
+
 dist-tg:
 	@mkdir -p dist
 	@$(foreach PLATFORM,$(PLATFORMS), \
@@ -36,11 +42,15 @@ dist-tg:
 		GOOS=$(OS) GOARCH=$(ARCH) $(GO_BUILD) -o $(OUT) ./cmd/tg/ && echo "  $(OUT)" ; \
 	)
 
-install-md2tg:
-	$(GO_BUILD) -o $(BINARY_PARSER) ./cmd/md2tg/
-	mv $(BINARY_PARSER) $(GOPATH)/bin/$(BINARY_PARSER)
-	@echo "已安装: $(GOPATH)/bin/$(BINARY_PARSER)"
+dist-md2tg:
+	@mkdir -p dist
+	@$(foreach PLATFORM,$(PLATFORMS), \
+		$(eval OS   := $(word 1,$(subst /, ,$(PLATFORM)))) \
+		$(eval ARCH := $(word 2,$(subst /, ,$(PLATFORM)))) \
+		$(eval EXT  := $(if $(filter windows,$(OS)),.exe,)) \
+		$(eval OUT  := dist/$(BINARY_PARSER)-$(OS)-$(ARCH)$(EXT)) \
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO_BUILD) -o $(OUT) ./cmd/md2tg/ && echo "  $(OUT)" ; \
+	)
 
 clean:
-	rm -f $(BINARY)
 	rm -rf dist/
