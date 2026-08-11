@@ -43,7 +43,10 @@ echo "# Hello" | md2tg
 cat README.md | md2tg
 md2tg < input.md
 md2tg -split-table < table.md  # tables as key:value format
+md2tg --rich < rich.md        # Telegram Rich HTML
 ```
+
+`--rich` 保留 Telegram Rich Message 的原生标题、表格、列表、公式和媒体结构；不启用时保持原有的普通 Telegram HTML 转换。
 
 ## Features
 

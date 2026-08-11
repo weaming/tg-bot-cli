@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -110,5 +111,112 @@ func TestTable(t *testing.T) {
 	result := Convert(input, false)
 	if len(result) == 0 {
 		t.Errorf("Table failed: empty result")
+	}
+}
+
+func TestRichTable(t *testing.T) {
+	input := "| Name | Age |\n|------|-----|\n| Alice | 30 |\n| Bob | 25 |"
+	result := ConvertRichHTML(input)
+
+	if !strings.Contains(result, "<table bordered striped>") {
+		t.Errorf("Rich table missing table element: %q", result)
+	}
+	if !strings.Contains(result, "<th>Name</th><th>Age</th>") {
+		t.Errorf("Rich table missing header cells: %q", result)
+	}
+	if !strings.Contains(result, "<td>Alice</td><td>30</td>") {
+		t.Errorf("Rich table missing data cells: %q", result)
+	}
+	if strings.Contains(result, "<pre>") {
+		t.Errorf("Rich table must not use preformatted layout: %q", result)
+	}
+}
+
+func TestRichMarkdownFeatures(t *testing.T) {
+	input := `# Heading
+
+~~deleted~~ ==marked== ||secret|| $x^2$
+
+- [x] completed
+- [ ] pending
+
+> quoted text
+
+![emoji](tg://emoji?id=5368324170671202286)
+
+[^note]
+
+[^note]: Footnote text
+
+$$E = mc^2$$
+
+` + "```math\nE = mc^2\n```"
+	result := ConvertRichHTML(input)
+
+	for _, expected := range []string{
+		"<h1>Heading</h1>",
+		"<del>deleted</del>",
+		"<mark>marked</mark>",
+		"<tg-spoiler>secret</tg-spoiler>",
+		"<tg-math>x^2</tg-math>",
+		"<ul>",
+		`<input type="checkbox" checked>`,
+		`<input type="checkbox">`,
+		"<blockquote>",
+		`<img src="tg://emoji?id=5368324170671202286"/>`,
+		`<a href="#fn-1">[1]</a>`,
+		`<a name="fn-1"></a>`,
+		"<tg-math-block>E = mc^2",
+	} {
+		if !strings.Contains(result, expected) {
+			t.Errorf("Rich feature missing %q in %q", expected, result)
+		}
+	}
+	if strings.Contains(result, "<p><tg-math-block>") {
+		t.Errorf("Block formula must not be nested in paragraph: %q", result)
+	}
+}
+
+func TestRichMarkdownMedia(t *testing.T) {
+	input := `![Photo caption](https://example.com/photo.jpg "Photo caption")
+
+![](https://example.com/video.mp4)
+
+![](https://example.com/audio.mp3)
+
+![](https://example.com/animation.gif)`
+	result := ConvertRichHTML(input)
+
+	for _, expected := range []string{
+		`<figure><img src="https://example.com/photo.jpg"/><figcaption>Photo caption</figcaption></figure>`,
+		`<video src="https://example.com/video.mp4"></video>`,
+		`<audio src="https://example.com/audio.mp3"></audio>`,
+		`<video src="https://example.com/animation.gif"></video>`,
+	} {
+		if !strings.Contains(result, expected) {
+			t.Errorf("Rich media missing %q in %q", expected, result)
+		}
+	}
+}
+
+func TestRichMarkdownSpecialMedia(t *testing.T) {
+	input := `![22:45 tomorrow](tg://time?unix=1647531900&format=wDT)
+
+![](https://example.com/photo.jpg)
+![](https://example.com/video.mp4)`
+	result := ConvertRichHTML(input)
+
+	for _, expected := range []string{
+		`<tg-time unix="1647531900" format="wDT">22:45 tomorrow</tg-time>`,
+		`<img src="https://example.com/photo.jpg"/>`,
+		`<video src="https://example.com/video.mp4"></video>`,
+	} {
+		if !strings.Contains(result, expected) {
+			t.Errorf("Rich special media missing %q in %q", expected, result)
+		}
+	}
+
+	if strings.Contains(result, `<p><img`) || strings.Contains(result, `<img src="https://example.com/photo.jpg"/><video`) {
+		t.Errorf("Media must be rendered as separate blocks: %q", result)
 	}
 }

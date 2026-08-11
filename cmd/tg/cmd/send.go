@@ -20,6 +20,7 @@ var (
 	sendInputFile   string
 	sendMd2Html     bool
 	sendSplitTable  bool
+	sendRichFormat  string
 	sendParseMode   string
 	sendFile        string
 	sendCaption     string
@@ -41,6 +42,7 @@ func init() {
 	f.StringVarP(&sendInputFile, "input-file", "i", "", "从文件或 stdin（-）读取消息文本")
 	f.BoolVarP(&sendMd2Html, "md2html", "", false, "将 markdown 转换为 HTML（.md 文件自动转换）")
 	f.BoolVarP(&sendSplitTable, "split-table", "", false, "将 markdown 表格拆分成多行列表模式")
+	f.StringVar(&sendRichFormat, "rich", "", "使用 Rich Message：html 或 markdown")
 	f.StringVar(&sendParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.StringVarP(&sendFile, "file", "f", "", "要发送的文件路径")
 	f.StringVarP(&sendCaption, "caption", "c", "", "文件说明文字")
@@ -71,6 +73,9 @@ func runSend(cmd *cobra.Command, args []string) error {
 	}
 
 	if sendFile != "" {
+		if sendRichFormat != "" {
+			return fmt.Errorf("--rich 不能与 --file 一起使用")
+		}
 		return sendMedia(client, replyMarkup)
 	}
 	return sendTextMsg(client, replyMarkup)
@@ -86,6 +91,9 @@ func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) erro
 	}
 	if text == "" {
 		return fmt.Errorf("--text 不能为空")
+	}
+	if sendRichFormat != "" {
+		return sendRichTextMsg(client, replyMarkup, text)
 	}
 
 	if sendMd2Html || api.IsMarkdownFile(sendInputFile) {
@@ -105,6 +113,44 @@ func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) erro
 		DisableNotification:   sendSilent,
 		ProtectContent:        sendProtect,
 		ReplyMarkup:           replyMarkup,
+	})
+	if err != nil {
+		return err
+	}
+
+	printResult(msg, "message_id: %d", msg.MessageID)
+	return nil
+}
+
+func sendRichTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup, text string) error {
+	content, err := buildRichMessage(
+		sendRichFormat,
+		text,
+		sendMd2Html || api.IsMarkdownFile(sendInputFile),
+	)
+	if err != nil {
+		return err
+	}
+	if sendParseMode != "" {
+		return fmt.Errorf("--rich 不能与 --parse-mode 一起使用")
+	}
+	if sendLinkPreview {
+		return fmt.Errorf("--rich 不支持 --link-preview")
+	}
+
+	var replyParameters *api.ReplyParameters
+	if sendReplyTo > 0 {
+		replyParameters = &api.ReplyParameters{MessageID: sendReplyTo}
+	}
+
+	msg, err := client.SendRichMessage(api.SendRichMessageParams{
+		ChatID:              sendTo,
+		RichMessage:         content,
+		MessageThreadID:     sendThread,
+		ReplyParameters:     replyParameters,
+		DisableNotification: sendSilent,
+		ProtectContent:      sendProtect,
+		ReplyMarkup:         replyMarkup,
 	})
 	if err != nil {
 		return err

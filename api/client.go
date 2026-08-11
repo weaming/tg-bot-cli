@@ -145,6 +145,15 @@ func (c *Client) SendMessage(params SendMessageParams) (*Message, error) {
 	return parseResponse[Message](body)
 }
 
+// SendRichMessage 发送支持原生表格等结构化内容的 Rich Message。
+func (c *Client) SendRichMessage(params SendRichMessageParams) (*Message, error) {
+	body, err := c.doJSON("sendRichMessage", params)
+	if err != nil {
+		return nil, err
+	}
+	return parseResponse[Message](body)
+}
+
 // detectMediaMethod 根据文件扩展名自动选择 API 方法和表单字段名
 func detectMediaMethod(path string) (apiMethod, fileField string) {
 	ext := strings.ToLower(filepath.Ext(path))

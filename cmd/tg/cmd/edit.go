@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/weaming/tg-bot-cli/api"
 )
@@ -18,6 +20,7 @@ var (
 	editInputFile   string
 	editMd2Html     bool
 	editSplitTable  bool
+	editRichFormat  string
 	editParseMode   string
 	editLinkPreview bool
 	editButtons     []string
@@ -33,6 +36,7 @@ func init() {
 	f.StringVarP(&editInputFile, "input-file", "i", "", "从文件或 stdin（-）读取新文本")
 	f.BoolVarP(&editMd2Html, "md2html", "", false, "将 markdown 转换为 HTML（.md 文件自动转换）")
 	f.BoolVarP(&editSplitTable, "split-table", "", false, "将 markdown 表格拆分成多行列表模式")
+	f.StringVar(&editRichFormat, "rich", "", "使用 Rich Message：html 或 markdown")
 	f.StringVar(&editParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
 	f.BoolVarP(&editLinkPreview, "link-preview", "l", false, "启用链接预览")
 	f.StringArrayVarP(&editButtons, "button", "b", nil, "Inline 按钮行，格式同 send")
@@ -60,6 +64,10 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		text = editText
 	}
 
+	if editRichFormat != "" {
+		return editRichText(client, chat, text)
+	}
+
 	if editMd2Html || api.IsMarkdownFile(editInputFile) {
 		text = api.ConvertMarkdownToHTML(text, editSplitTable)
 		editParseMode = "HTML"
@@ -77,6 +85,41 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		ParseMode:             editParseMode,
 		DisableWebPagePreview: !editLinkPreview,
 		ReplyMarkup:           replyMarkup,
+	})
+	if err != nil {
+		return err
+	}
+
+	printResult(msg, "message_id: %d", msg.MessageID)
+	return nil
+}
+
+func editRichText(client *api.Client, chat, text string) error {
+	content, err := buildRichMessage(
+		editRichFormat,
+		text,
+		editMd2Html || api.IsMarkdownFile(editInputFile),
+	)
+	if err != nil {
+		return err
+	}
+	if editParseMode != "" {
+		return fmt.Errorf("--rich 不能与 --parse-mode 一起使用")
+	}
+	if editLinkPreview {
+		return fmt.Errorf("--rich 不支持 --link-preview")
+	}
+
+	replyMarkup, err := api.ParseButtons(editButtons)
+	if err != nil {
+		return err
+	}
+
+	msg, err := client.EditMessageText(api.EditMessageTextParams{
+		ChatID:      chat,
+		MessageID:   editMsgID,
+		RichMessage: &content,
+		ReplyMarkup: replyMarkup,
 	})
 	if err != nil {
 		return err

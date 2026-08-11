@@ -57,3 +57,8 @@ func IsMarkdownFile(path string) bool {
 func ConvertMarkdownToHTML(md string, splitTable bool) string {
 	return parser.Convert(md, splitTable)
 }
+
+// ConvertMarkdownToRichHTML 将 Markdown 转换为 Rich Message HTML。
+func ConvertMarkdownToRichHTML(md string) string {
+	return parser.ConvertRichHTML(md)
+}

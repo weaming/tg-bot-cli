@@ -54,6 +54,39 @@ type SendMessageParams struct {
 	ReplyMarkup           *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
+// RichMessageContent 是 Rich Message 的正文格式，三种字段只能设置一种。
+type RichMessageContent struct {
+	HTML                string                  `json:"html,omitempty"`
+	Markdown            string                  `json:"markdown,omitempty"`
+	Blocks              any                     `json:"blocks,omitempty"`
+	Media               []InputRichMessageMedia `json:"media,omitempty"`
+	IsRTL               bool                    `json:"is_rtl,omitempty"`
+	SkipEntityDetection bool                    `json:"skip_entity_detection,omitempty"`
+}
+
+// InputRichMessageMedia 将富文本中的 tg:// 媒体链接映射到待发送媒体。
+// Media 使用对应的 InputMediaPhoto、InputMediaVideo 等请求结构。
+type InputRichMessageMedia struct {
+	ID    string `json:"id"`
+	Media any    `json:"media"`
+}
+
+// ReplyParameters 描述 Rich Message 的回复目标。
+type ReplyParameters struct {
+	MessageID int `json:"message_id"`
+}
+
+// SendRichMessageParams 对应 sendRichMessage 的请求参数。
+type SendRichMessageParams struct {
+	ChatID              string                `json:"chat_id"`
+	RichMessage         RichMessageContent    `json:"rich_message"`
+	MessageThreadID     int                   `json:"message_thread_id,omitempty"`
+	ReplyParameters     *ReplyParameters      `json:"reply_parameters,omitempty"`
+	DisableNotification bool                  `json:"disable_notification,omitempty"`
+	ProtectContent      bool                  `json:"protect_content,omitempty"`
+	ReplyMarkup         *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
+}
+
 // SendMediaParams 用于发送媒体文件时的附加参数（multipart 表单字段）
 type SendMediaParams struct {
 	ChatID              string
@@ -72,8 +105,9 @@ type SendMediaParams struct {
 type EditMessageTextParams struct {
 	ChatID                string                `json:"chat_id"`
 	MessageID             int                   `json:"message_id"`
-	Text                  string                `json:"text"`
+	Text                  string                `json:"text,omitempty"`
 	ParseMode             string                `json:"parse_mode,omitempty"`
+	RichMessage           *RichMessageContent   `json:"rich_message,omitempty"`
 	DisableWebPagePreview bool                  `json:"disable_web_page_preview,omitempty"`
 	ReplyMarkup           *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
