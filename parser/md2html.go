@@ -209,7 +209,29 @@ var (
 	richInlineMathPattern = regexp.MustCompile(`(^|[^$])\$([^$\n]+)\$([^$]|$)`)
 	richMarkPattern       = regexp.MustCompile(`==([^=\n]+)==`)
 	richSpoilerPattern    = regexp.MustCompile(`\|\|([^|\n]+)\|\|`)
+	richSupPattern        = regexp.MustCompile(`(^|[^\^])\^([^\^\[\]\s]+)\^`)
+	richSubPattern        = regexp.MustCompile(`(^|[^~])~([^~\s]+)~([^~]|$)`)
+	richProtectedPattern  = regexp.MustCompile("(?s)```.*?```|`[^`\\n]*`|\\$\\$.*?\\$\\$|\\$[^$\\n]+\\$")
 )
+
+func replaceRichSuperscriptAndSubscript(input string) string {
+	protectedRegions := make([]string, 0)
+	protectedInput := richProtectedPattern.ReplaceAllStringFunc(input, func(region string) string {
+		index := len(protectedRegions)
+		protectedRegions = append(protectedRegions, region)
+		return fmt.Sprintf("\\x00tg-rich-region-%d\\x00", index)
+	})
+
+	protectedInput = richSupPattern.ReplaceAllString(protectedInput, `$1<sup>$2</sup>`)
+	protectedInput = richSubPattern.ReplaceAllString(protectedInput, `$1<sub>$2</sub>$3`)
+
+	for index, region := range protectedRegions {
+		placeholder := fmt.Sprintf("\\x00tg-rich-region-%d\\x00", index)
+		protectedInput = strings.Replace(protectedInput, placeholder, region, 1)
+	}
+
+	return protectedInput
+}
 
 func (c *Converter) preProcessRich(input string) string {
 	input = richBlockMathPattern.ReplaceAllString(input, "\n\n<tg-math-block>$1</tg-math-block>\n\n")
@@ -869,9 +891,16 @@ func Convert(input string, splitTable bool) string {
 
 // ConvertRichHTML 将 Markdown 转换为 Rich Message HTML，并保留原生表格结构。
 func ConvertRichHTML(input string) string {
+	input = ConvertRichMarkdown(input)
+
 	c := NewConverter()
 	c.richTable = true
 	return c.convert(input)
+}
+
+// ConvertRichMarkdown 将 Markdown 扩展转换为可嵌入 Rich Markdown 的 HTML 标签。
+func ConvertRichMarkdown(input string) string {
+	return replaceRichSuperscriptAndSubscript(input)
 }
 
 func (c *Converter) convert(input string) string {

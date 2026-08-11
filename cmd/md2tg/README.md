@@ -43,10 +43,11 @@ echo "# Hello" | md2tg
 cat README.md | md2tg
 md2tg < input.md
 md2tg -split-table < table.md  # tables as key:value format
-md2tg --rich < rich.md        # Telegram Rich HTML
+md2tg --rich=html < rich.md   # Telegram Rich HTML
+md2tg --rich=md < rich.md     # Rich Markdown，预处理后输出 Markdown
 ```
 
-`--rich` 保留 Telegram Rich Message 的原生标题、表格、列表、公式和媒体结构；不启用时保持原有的普通 Telegram HTML 转换。
+`--rich=html` 保留 Telegram Rich Message 的原生标题、表格、列表、公式和媒体结构；`--rich=md` 保留 Markdown，仅将上下标等扩展预处理为可嵌入的 HTML 标签；不启用时保持原有的普通 Telegram HTML 转换。
 
 ## Features
 

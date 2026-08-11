@@ -58,7 +58,7 @@ tg me
 | `--text`       | `-m` | 消息文本                                            |
 | `--input-file` | `-i` | 从文件或 stdin（-）读取                             |
 | `--md2html`    | —    | 将 markdown 转换为 HTML                             |
-| `--rich`       | —    | 使用 Rich Message：`html` 或 `markdown`             |
+| `--rich`       | —    | 使用 Rich Message：`html` 或 `md`                  |
 | `--file`       | `-f` | 文件路径（自动识别类型）                            |
 | `--caption`    | `-c` | 文件说明                                            |
 | `--msg`        | `-m` | 消息 ID                                             |

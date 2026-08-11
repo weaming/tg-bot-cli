@@ -1,9 +1,29 @@
 package parser
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
+
+func readSampleFile(t *testing.T, fileName string) string {
+	t.Helper()
+
+	_, testFilePath, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("无法定位测试文件路径")
+	}
+
+	samplePath := filepath.Join(filepath.Dir(testFilePath), "..", "tests", "samples", fileName)
+	content, err := os.ReadFile(samplePath)
+	if err != nil {
+		t.Fatalf("读取样例失败 %s: %v", samplePath, err)
+	}
+
+	return string(content)
+}
 
 func TestHeading(t *testing.T) {
 	input := "# Heading 标题"
@@ -174,6 +194,70 @@ $$E = mc^2$$
 	}
 	if strings.Contains(result, "<p><tg-math-block>") {
 		t.Errorf("Block formula must not be nested in paragraph: %q", result)
+	}
+}
+
+func TestRichMarkdownSuperscriptAndSubscript(t *testing.T) {
+	input := "`^code^` `~code~`\n\n~~deleted~~ ^sup^ ~sub~\n\nFormula: $x^2+y^2$\n\n[^note]\n\n[^note]: Footnote text"
+	result := ConvertRichHTML(input)
+
+	for _, expected := range []string{
+		"<code>^code^</code>",
+		"<code>~code~</code>",
+		"<del>deleted</del>",
+		"<sup>sup</sup>",
+		"<sub>sub</sub>",
+		"<tg-math>x^2+y^2</tg-math>",
+		`<a href="#fn-1">[1]</a>`,
+	} {
+		if !strings.Contains(result, expected) {
+			t.Errorf("Rich decoration missing %q in %q", expected, result)
+		}
+	}
+
+	if strings.Contains(result, "<del>sub</del>") {
+		t.Errorf("Subscript was parsed as strikethrough: %q", result)
+	}
+	if strings.Contains(result, "<sup>2 + y</sup>") {
+		t.Errorf("Formula was parsed as superscript: %q", result)
+	}
+}
+
+func TestConvertRichMarkdownExtensions(t *testing.T) {
+	input := "**bold** ^sup^ ~sub~ ~~deleted~~ `^code^` $x^2+y^2$"
+	expected := "**bold** <sup>sup</sup> <sub>sub</sub> ~~deleted~~ `^code^` $x^2+y^2$"
+
+	result := ConvertRichMarkdown(input)
+	if result != expected {
+		t.Errorf("Rich Markdown conversion failed:\n  got:  %q\n  want: %q", result, expected)
+	}
+}
+
+func TestConvertRichMarkdownOfficialSampleUnchanged(t *testing.T) {
+	input := readSampleFile(t, "official-rich-markdown.md")
+	result := ConvertRichMarkdown(input)
+
+	if result != input {
+		t.Errorf("official Rich Markdown sample was changed:\n%s", result)
+	}
+}
+
+func TestConvertRichMarkdownOfficialHTMLSampleUnchanged(t *testing.T) {
+	input := readSampleFile(t, "official-rich-html.html")
+	result := ConvertRichMarkdown(input)
+
+	if result != input {
+		t.Errorf("official Rich HTML sample was changed:\n%s", result)
+	}
+}
+
+func TestConvertRichHTMLUsesRichMarkdownPreprocessing(t *testing.T) {
+	input := "**bold** ^sup^ ~sub~ ~~deleted~~"
+	expected := ConvertRichHTML(ConvertRichMarkdown(input))
+	result := ConvertRichHTML(input)
+
+	if result != expected {
+		t.Errorf("Rich HTML pipeline mismatch:\n  got:  %q\n  want: %q", result, expected)
 	}
 }
 

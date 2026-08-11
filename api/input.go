@@ -62,3 +62,8 @@ func ConvertMarkdownToHTML(md string, splitTable bool) string {
 func ConvertMarkdownToRichHTML(md string) string {
 	return parser.ConvertRichHTML(md)
 }
+
+// ConvertMarkdownToRichMarkdown 将 Markdown 扩展转换为可嵌入 Rich Markdown 的 HTML 标签。
+func ConvertMarkdownToRichMarkdown(md string) string {
+	return parser.ConvertRichMarkdown(md)
+}

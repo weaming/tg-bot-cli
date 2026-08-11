@@ -9,7 +9,7 @@ import (
 
 const (
 	richFormatHTML     = "html"
-	richFormatMarkdown = "markdown"
+	richFormatMarkdown = "md"
 )
 
 func buildRichMessage(format, text string, convertMarkdown bool) (api.RichMessageContent, error) {
@@ -20,8 +20,11 @@ func buildRichMessage(format, text string, convertMarkdown bool) (api.RichMessag
 		}
 		return api.RichMessageContent{HTML: text}, nil
 	case richFormatMarkdown:
+		if convertMarkdown {
+			text = api.ConvertMarkdownToRichMarkdown(text)
+		}
 		return api.RichMessageContent{Markdown: text}, nil
 	default:
-		return api.RichMessageContent{}, fmt.Errorf("--rich 只支持 html 或 markdown，收到: %q", format)
+		return api.RichMessageContent{}, fmt.Errorf("--rich 只支持 html 或 md，收到: %q", format)
 	}
 }

@@ -90,7 +90,7 @@ Rich Markdown 可以通过嵌入 Telegram 支持的 HTML 标签表达其中大�
 
 在命令行中：
 
-- `--rich=markdown`：发送原生 Rich Markdown，适合简洁的 Markdown 文档。
+- `--rich=md`：发送原生 Rich Markdown，适合简洁的 Markdown 文档。
 - `--rich=html`：发送 Rich HTML，表达能力最完整。
 - `--rich=html --input-file xxx.md`：将 Markdown 转换为 Rich HTML，适合作为统一的完整输出路径。
 
