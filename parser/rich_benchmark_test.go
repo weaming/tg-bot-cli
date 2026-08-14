@@ -1,12 +1,50 @@
 package parser
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
 
-func BenchmarkConvertRichHTMLPlainExtensions(b *testing.B) {
-	input := strings.Repeat("==plain text== ||plain spoiler|| ", 100)
+func readBenchmarkSample(b *testing.B, fileName string) string {
+	b.Helper()
+
+	_, testFilePath, _, ok := runtime.Caller(0)
+	if !ok {
+		b.Fatal("无法定位 benchmark 文件路径")
+	}
+
+	samplePath := filepath.Join(filepath.Dir(testFilePath), "..", "tests", "samples", fileName)
+	content, err := os.ReadFile(samplePath)
+	if err != nil {
+		b.Fatalf("读取 benchmark 样例失败 %s: %v", samplePath, err)
+	}
+
+	return string(content)
+}
+
+func BenchmarkConvertCommonMarkGFMExtensions(b *testing.B) {
+	input := readBenchmarkSample(b, "CommonMark_GFM_Extensions.md")
+	b.ReportAllocs()
+
+	for index := 0; index < b.N; index++ {
+		Convert(input, false)
+	}
+}
+
+func BenchmarkConvertOfficialRichMarkdown(b *testing.B) {
+	input := readBenchmarkSample(b, "official-rich-markdown.md")
+	b.ReportAllocs()
+
+	for index := 0; index < b.N; index++ {
+		Convert(input, false)
+	}
+}
+
+func BenchmarkConvertRichHTMLCommonMarkGFMExtensions(b *testing.B) {
+	input := readBenchmarkSample(b, "CommonMark_GFM_Extensions.md")
 	b.ReportAllocs()
 
 	for index := 0; index < b.N; index++ {
@@ -14,12 +52,30 @@ func BenchmarkConvertRichHTMLPlainExtensions(b *testing.B) {
 	}
 }
 
-func BenchmarkConvertRichHTMLNestedExtensions(b *testing.B) {
-	input := strings.Repeat("==**bold text**== ||_italic text_|| ", 100)
+func BenchmarkConvertRichHTMLOfficialRichMarkdown(b *testing.B) {
+	input := readBenchmarkSample(b, "official-rich-markdown.md")
 	b.ReportAllocs()
 
 	for index := 0; index < b.N; index++ {
 		ConvertRichHTML(input)
+	}
+}
+
+func BenchmarkConvertRichMarkdownCommonMarkGFMExtensions(b *testing.B) {
+	input := readBenchmarkSample(b, "CommonMark_GFM_Extensions.md")
+	b.ReportAllocs()
+
+	for index := 0; index < b.N; index++ {
+		ConvertRichMarkdown(input)
+	}
+}
+
+func BenchmarkConvertRichMarkdownOfficialRichMarkdown(b *testing.B) {
+	input := readBenchmarkSample(b, "official-rich-markdown.md")
+	b.ReportAllocs()
+
+	for index := 0; index < b.N; index++ {
+		ConvertRichMarkdown(input)
 	}
 }
 
