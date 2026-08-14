@@ -346,6 +346,35 @@ func TestConvertRichMarkdownExtensions(t *testing.T) {
 	}
 }
 
+func TestConvertRichMarkdownExpandsImageReferences(t *testing.T) {
+	input := "![Reference image][logo]\n\n[logo]: https://example.com/logo.png \"Logo title\""
+	expected := "![Reference image](https://example.com/logo.png \"Logo title\")\n\n[logo]: https://example.com/logo.png \"Logo title\""
+
+	result := ConvertRichMarkdown(input)
+	if result != expected {
+		t.Errorf("image reference was not expanded:\n  got:  %q\n  want: %q", result, expected)
+	}
+}
+
+func TestConvertRichMarkdownConvertsLinkedImages(t *testing.T) {
+	input := "[![Preview](https://example.com/preview.png)](https://example.com/video)"
+	expected := "[Preview](https://example.com/video)"
+
+	result := ConvertRichMarkdown(input)
+	if result != expected {
+		t.Errorf("linked image was not converted:\n  got:  %q\n  want: %q", result, expected)
+	}
+}
+
+func TestConvertRichMarkdownPreservesHTMLCodeAfterText(t *testing.T) {
+	input := "prefix <code>^x^ ~x~</code> suffix"
+	result := ConvertRichMarkdown(input)
+
+	if result != input {
+		t.Errorf("HTML code after text was changed: got %q, want %q", result, input)
+	}
+}
+
 func TestConvertRichMarkdownCommonMarkGFMExtensionsMatchesExpected(t *testing.T) {
 	input := readSampleFile(t, "CommonMark_GFM_Extensions.md")
 	expected := readSampleFile(t, "CommonMark_GFM_Extensions.expected-rich.md")
