@@ -19,6 +19,7 @@ var (
 	sendText        string
 	sendInputFile   string
 	sendMd2Html     bool
+	sendNoParse     bool
 	sendSplitTable  bool
 	sendRichFormat  string
 	sendParseMode   string
@@ -41,6 +42,7 @@ func init() {
 	f.StringVarP(&sendText, "text", "m", "", "消息文本")
 	f.StringVarP(&sendInputFile, "input-file", "i", "", "从文件或 stdin（-）读取消息文本")
 	f.BoolVarP(&sendMd2Html, "md2html", "", false, "转换 Markdown 扩展（Rich Markdown 保留 Markdown，普通消息转换为 HTML；.md 文件自动启用）")
+	f.BoolVar(&sendNoParse, "no-parse", false, "禁用本地 Markdown/MarkdownV2 预处理，原样交给 Telegram")
 	f.BoolVarP(&sendSplitTable, "split-table", "", false, "将 markdown 表格拆分成多行列表模式")
 	f.StringVar(&sendRichFormat, "rich", "", "使用 Rich Message：md 或 html")
 	f.StringVar(&sendParseMode, "parse-mode", "", "解析模式：HTML | MarkdownV2")
@@ -96,10 +98,10 @@ func sendTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) erro
 		return sendRichTextMsg(client, replyMarkup, text)
 	}
 
-	if sendMd2Html || api.IsMarkdownFile(sendInputFile) {
+	if shouldConvertMarkdown(sendNoParse, sendMd2Html, sendInputFile) {
 		text = api.ConvertMarkdownToHTML(text, sendSplitTable)
 		sendParseMode = "HTML"
-	} else if sendParseMode == "MarkdownV2" {
+	} else if !sendNoParse && sendParseMode == "MarkdownV2" {
 		text = api.EscapeMarkdownV2(text)
 	}
 
@@ -126,7 +128,7 @@ func sendRichTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup, 
 	content, err := buildRichMessage(
 		sendRichFormat,
 		text,
-		sendMd2Html || api.IsMarkdownFile(sendInputFile),
+		shouldConvertMarkdown(sendNoParse, sendMd2Html, sendInputFile),
 	)
 	if err != nil {
 		return err
@@ -158,6 +160,10 @@ func sendRichTextMsg(client *api.Client, replyMarkup *api.InlineKeyboardMarkup, 
 
 	printResult(msg, "message_id: %d", msg.MessageID)
 	return nil
+}
+
+func shouldConvertMarkdown(noParse, explicitConversion bool, inputFile string) bool {
+	return !noParse && (explicitConversion || api.IsMarkdownFile(inputFile))
 }
 
 func sendMedia(client *api.Client, replyMarkup *api.InlineKeyboardMarkup) error {
