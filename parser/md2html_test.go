@@ -346,6 +346,16 @@ func TestConvertRichMarkdownExtensions(t *testing.T) {
 	}
 }
 
+func TestConvertRichMarkdownCommonMarkGFMExtensionsMatchesExpected(t *testing.T) {
+	input := readSampleFile(t, "CommonMark_GFM_Extensions.md")
+	expected := readSampleFile(t, "CommonMark_GFM_Extensions.expected-rich.md")
+	result := ConvertRichMarkdown(input)
+
+	if result != expected {
+		t.Errorf("CommonMark GFM Rich Markdown conversion failed:\n  got:  %q\n  want: %q", result, expected)
+	}
+}
+
 func TestConvertRichMarkdownOfficialSampleUnchanged(t *testing.T) {
 	input := readSampleFile(t, "official-rich-markdown.md")
 	result := ConvertRichMarkdown(input)

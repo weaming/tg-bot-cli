@@ -119,18 +119,3 @@ Telegram 文档只承诺“尽可能兼容 GFM”，以下语法不应默认视�
 - 其他 Markdown 方言的专用扩展
 - 部分转义、实体和换行细节
 
-## 当前样例的剩余覆盖项
-
-`tests/samples/rich-all.md` 目前还没有覆盖：
-
-- `tg://photo?id=...`
-- `tg://video?id=...`
-- `tg://audio?id=...`
-- OGG 语音消息
-- 带标题的 GIF 动画
-- 引用式链接和图片
-- Setext 标题
-- 缩进代码块
-- 有序列表的 `start`、`reversed` 等 HTML 属性变体
-
-`<tg-thinking>` 只适用于 `sendRichMessageDraft`，不属于普通 `sendRichMessage` 的 Markdown 样例。
