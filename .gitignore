@@ -1,1 +1,8 @@
+node_modules/
 dist/
+
+ffi/**/*.dylib
+ffi/**/*.dll
+ffi/**/*.so
+ffi/**/*.h
+ffi/koffi-native*

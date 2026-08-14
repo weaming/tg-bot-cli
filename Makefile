@@ -13,6 +13,18 @@ endif
 
 GO_BUILD = CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)"
 
+FFI_OUTPUT_DIR ?= ffi/koffi/native
+FFI_DARWIN_ARM64_PACKAGE_DIR ?= ffi/koffi-native-darwin-arm64
+FFI_DARWIN_X64_PACKAGE_DIR ?= ffi/koffi-native-darwin-x64
+FFI_GOOS := $(shell go env GOOS)
+ifeq ($(FFI_GOOS),darwin)
+FFI_LIBRARY_NAME := libtgmarkdown.dylib
+else ifeq ($(FFI_GOOS),windows)
+FFI_LIBRARY_NAME := tgmarkdown.dll
+else
+FFI_LIBRARY_NAME := libtgmarkdown.so
+endif
+
 PLATFORMS = \
 	linux/amd64 \
 	linux/arm64 \
@@ -51,6 +63,23 @@ dist-md2tg:
 		$(eval OUT  := dist/$(BINARY_PARSER)-$(OS)-$(ARCH)$(EXT)) \
 		GOOS=$(OS) GOARCH=$(ARCH) $(GO_BUILD) -o $(OUT) ./cmd/md2tg/ && echo "  $(OUT)" ; \
 	)
+
+ffi-rich-markdown:
+	@mkdir -p $(FFI_OUTPUT_DIR)
+	CGO_ENABLED=1 go build -trimpath -ldflags "-s -w" -buildmode=c-shared -o $(FFI_OUTPUT_DIR)/$(FFI_LIBRARY_NAME) ./ffi/rich_markdown
+	@echo "已构建: $(FFI_OUTPUT_DIR)/$(FFI_LIBRARY_NAME)"
+
+ffi-rich-markdown-packages: ffi-rich-markdown-darwin-arm64 ffi-rich-markdown-darwin-x64
+
+ffi-rich-markdown-darwin-arm64:
+	@mkdir -p $(FFI_DARWIN_ARM64_PACKAGE_DIR)
+	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w" -buildmode=c-shared -o $(FFI_DARWIN_ARM64_PACKAGE_DIR)/libtgmarkdown.dylib ./ffi/rich_markdown
+	@echo "已构建: $(FFI_DARWIN_ARM64_PACKAGE_DIR)/libtgmarkdown.dylib"
+
+ffi-rich-markdown-darwin-x64:
+	@mkdir -p $(FFI_DARWIN_X64_PACKAGE_DIR)
+	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags "-s -w" -buildmode=c-shared -o $(FFI_DARWIN_X64_PACKAGE_DIR)/libtgmarkdown.dylib ./ffi/rich_markdown
+	@echo "已构建: $(FFI_DARWIN_X64_PACKAGE_DIR)/libtgmarkdown.dylib"
 
 clean:
 	rm -rf dist/
