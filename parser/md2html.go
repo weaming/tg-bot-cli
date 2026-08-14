@@ -932,7 +932,7 @@ func (c *Converter) renderRichTableTo(buf *bytes.Buffer, table *extAst.Table, so
 	buf.WriteString("</table>\n\n")
 }
 
-func Convert(input string, splitTable bool) string {
+func ConvertLegacy(input string, splitTable bool) string {
 	c := NewConverter()
 	c.splitTable = splitTable
 	return c.convert(input)

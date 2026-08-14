@@ -18,7 +18,7 @@ func convertMarkdown(input string, splitTable bool, richMode string) (string, er
 
 	switch normalizedRichMode {
 	case "":
-		return parser.Convert(input, splitTable), nil
+		return parser.ConvertLegacy(input, splitTable), nil
 	case "html":
 		return parser.ConvertRichHTML(input), nil
 	case "md":

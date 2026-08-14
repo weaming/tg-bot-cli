@@ -30,7 +30,7 @@ func BenchmarkConvertCommonMarkGFMExtensions(b *testing.B) {
 	b.ReportAllocs()
 
 	for index := 0; index < b.N; index++ {
-		Convert(input, false)
+		ConvertLegacy(input, false)
 	}
 }
 
@@ -39,7 +39,7 @@ func BenchmarkConvertOfficialRichMarkdown(b *testing.B) {
 	b.ReportAllocs()
 
 	for index := 0; index < b.N; index++ {
-		Convert(input, false)
+		ConvertLegacy(input, false)
 	}
 }
 
